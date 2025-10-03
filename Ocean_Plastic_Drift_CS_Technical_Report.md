@@ -38,8 +38,8 @@ This document outlines the technical architecture and implementation plan for th
 - **Language**: Python for all backend components (FastAPI, Celery, SQLAlchemy)
 - **Database**: PostgreSQL + TimescaleDB for time-series data, Redis for caching and message queuing
 - **Task Queue**: Celery with Redis broker for distributed task management
-- **Container Orchestration**: Kubernetes
-- **Cloud Provider**: AWS/GCP with multi-region deployment
+- **Container Orchestration**: Kubernetes and Docker
+- **Cloud Provider**: Chameleon Cloud or On-premises 
 
 **Client Applications:**
 - **Desktop**: Electron (Node.js) for cross-platform compatibility
