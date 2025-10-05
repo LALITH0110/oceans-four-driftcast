@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Plastic Forecast Client</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-content">
+                <h1>🌊 Ocean Plastic Forecast</h1>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Registration Section -->
+            <section id="registrationSection" class="card">
+                <h2>Client Registration</h2>
+                <form id="registrationForm">
+                    <div class="form-group">
+                        <label for="clientName">Client Name:</label>
+                        <input type="text" id="clientName" required placeholder="Enter a name for this client">
+                    </div>
+                    <div class="form-group">
+                        <label for="serverUrl">Server URL:</label>
+                        <input type="url" id="serverUrl" required placeholder="http://localhost:8000">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register Client</button>
+                </form>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="hidden">
+                <div class="dashboard-grid">
+                    <!-- System Info Card -->
+                    <div class="card">
+                        <h3>System Information</h3>
+                        <div id="systemInfo">
+                            <div class="info-row">
+                                <span class="label">CPU:</span>
+                                <span id="cpuInfo">Loading...</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Memory:</span>
+                                <span id="memoryInfo">Loading...</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Platform:</span>
+                                <span id="platformInfo">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task Statistics Card -->
+                    <div class="card">
+                        <h3>Task Statistics</h3>
+                        <div id="taskStats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="completedTasks">0</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="failedTasks">0</div>
+                                <div class="stat-label">Failed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="activeTasks">0</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="successRate">0%</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resource Usage Card -->
+                    <div class="card">
+                        <h3>Resource Usage</h3>
+                        <div id="resourceUsage">
+                            <div class="usage-item">
+                                <div class="usage-label">CPU Usage</div>
+                                <div class="usage-bar">
+                                    <div class="usage-fill" id="cpuUsageFill"></div>
+                                </div>
+                                <div class="usage-text" id="cpuUsageText">0%</div>
+                            </div>
+                            <div class="usage-item">
+                                <div class="usage-label">Memory Usage</div>
+                                <div class="usage-bar">
+                                    <div class="usage-fill" id="memoryUsageFill"></div>
+                                </div>
+                                <div class="usage-text" id="memoryUsageText">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls Card -->
+                    <div class="card">
+                        <h3>Controls</h3>
+                        <div class="controls">
+                            <button id="pauseBtn" class="btn btn-warning">Pause Processing</button>
+                            <button id="requestTaskBtn" class="btn btn-secondary">Request Task</button>
+                            <button id="settingsBtn" class="btn btn-secondary">Settings</button>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log Card -->
+                    <div class="card full-width">
+                        <h3>Activity Log</h3>
+                        <div id="activityLog" class="log-container">
+                            <div class="log-entry">
+                                <span class="log-time">Starting up...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Modal -->
+            <div id="settingsModal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Settings</h3>
+                        <button class="modal-close" id="closeSettings">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="settingsForm">
+                            <div class="form-group">
+                                <label for="maxCpuUsage">Max CPU Usage (%):</label>
+                                <input type="range" id="maxCpuUsage" min="10" max="100" value="50">
+                                <span id="maxCpuValue">50%</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="maxMemoryUsage">Max Memory Usage (MB):</label>
+                                <input type="number" id="maxMemoryUsage" min="512" max="8192" value="1024">
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="autoStart"> Auto-start processing
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="runInBackground"> Run in background
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
+                        <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
