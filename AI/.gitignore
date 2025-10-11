@@ -1,3 +1,7 @@
+# DriftCast ignores for bulky artifacts and local tooling.
+# Keeps raw data, models, caches, and temp files out of git.
+# Update if you add new cache directories (e.g., data/cache).
+
 .env
 /~
 /.venv
@@ -6,13 +10,16 @@ __pycache__/
 *.egg-info/
 *.log
 
-# Large datasets & checkpoints
-data/**/*.nc
-data/**/*.grib
-data/**/*.csv
-models/
+# Data & model artifacts
+/data/
+/models/
+/wandb/
 notebooks/.ipynb_checkpoints/
+*.nc
+*.npz
+*.zarr
 
 # IDE & OS specific
 .DS_Store
 Thumbs.db
+docs/plots/
