@@ -61,8 +61,10 @@ def open_dataset(
 
 def load_currents(cfg: DataConfig, months: Optional[List[str]] = None) -> Optional[xr.Dataset]:
     index = index_datasets(cfg)
-    months = months or index.mandatory_intersection()
-    files = [path for m in months for path in index.currents.get(m, [])]
+    selected = months if months is not None else index.mandatory_intersection()
+    if not selected:  # fallback
+        selected = sorted(index.currents.keys())
+    files = [p for m in selected for p in index.currents.get(m, [])]
     if not files:
         LOGGER.warning("No current NetCDF files found.")
         return None
@@ -71,8 +73,10 @@ def load_currents(cfg: DataConfig, months: Optional[List[str]] = None) -> Option
 
 def load_winds(cfg: DataConfig, months: Optional[List[str]] = None) -> Optional[xr.Dataset]:
     index = index_datasets(cfg)
-    months = months or index.mandatory_intersection()
-    files = [path for m in months for path in index.winds.get(m, [])]
+    selected = months if months is not None else index.mandatory_intersection()
+    if not selected:  # fallback
+        selected = sorted(index.winds.keys())
+    files = [p for m in selected for p in index.winds.get(m, [])]
     if not files:
         LOGGER.warning("No ERA5 wind NetCDF files found.")
         return None
@@ -81,28 +85,50 @@ def load_winds(cfg: DataConfig, months: Optional[List[str]] = None) -> Optional[
 
 def load_stokes(cfg: DataConfig, months: Optional[List[str]] = None) -> Optional[xr.Dataset]:
     index = index_datasets(cfg)
-    months = months or index.waves_intersection()
-    files = [path for m in months for path in index.waves.get(m, [])]
+    selected = months if months is not None else index.waves_intersection()
+    if not selected:  # fallback
+        selected = sorted(index.waves.keys())
+    files = [p for m in selected for p in index.waves.get(m, [])]
     if not files:
         LOGGER.info("No Stokes drift NetCDF files present; falling back to wind-derived drift.")
         return None
     return open_dataset(files, cfg.bbox)
 
 
-def load_drifters(
-    cfg: DataConfig,
-    months: Optional[List[str]] = None,
-) -> pd.DataFrame:
+def load_drifters(cfg: DataConfig, months: Optional[List[str]] = None) -> pd.DataFrame:
     index = index_datasets(cfg)
     months = months or sorted(index.drifters.keys())
     frames: List[pd.DataFrame] = []
+
     for month in months:
         for path in index.drifters.get(month, []):
             try:
-                df = pd.read_csv(path)
-            except Exception as exc:  # pragma: no cover
+                # detect and skip a units row on line 2
+                skiprows = None
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    _ = f.readline()
+                    second = f.readline()
+                    if second and (
+                        "degrees_north" in second
+                        or "degrees_east" in second
+                        or second.strip().startswith(("UTC", "seconds since"))
+                    ):
+                        skiprows = [1]
+
+                df = pd.read_csv(
+                    path,
+                    comment="#",
+                    engine="python",
+                    on_bad_lines="skip",
+                    na_values=["NaN", "nan", "", "-999999", "-999999.0"],
+                    skiprows=skiprows,
+                    parse_dates=["time"],
+                    date_format="ISO8601",  # pandas 2.x fast path
+                )
+            except Exception as exc:
                 LOGGER.warning("Skipping %s: %s", path, exc)
                 continue
+
             df = df.rename(
                 columns={
                     "latitude": "lat",
@@ -111,13 +137,23 @@ def load_drifters(
                     "Longitude": "lon",
                     "ID": "id",
                     "trajectory": "id",
+                    "ve": "u",
+                    "vn": "v",
+                    "sst": "sea_surface_temperature",
                 }
             )
-            df["time"] = pd.to_datetime(df["time"], utc=True, errors="coerce")
-            df = df.dropna(subset=["time", "lat", "lon"])
-            frames.append(df[["time", "lat", "lon", "id"]])
+            if "id" in df.columns:
+                df["id"] = df["id"].astype(str)
+            for c in ("lat", "lon", "u", "v", "sea_surface_temperature"):
+                if c in df.columns:
+                    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+            df = df.dropna(subset=[c for c in ("time", "lat", "lon") if c in df.columns])
+            frames.append(df[[c for c in ("time", "lat", "lon", "id", "u", "v", "sea_surface_temperature") if c in df.columns]])
+
     if not frames:
         return pd.DataFrame(columns=["time", "lat", "lon", "id"])
+
     return pd.concat(frames, ignore_index=True)
 
 
