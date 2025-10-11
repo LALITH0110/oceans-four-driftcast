@@ -19,11 +19,9 @@ Plastic at the ocean surface is moved by:
 
 This can be described by an advection–diffusion equation or, equivalently, a stochastic particle model:
 
-\[
-dX_t = u(X_t, t)\,dt + alpha\,w(X_t, t)\,dt + s(X_t, t)\,dt + \sqrt{2\kappa(X_t)}\,dW_t
-\]
+$$dX_t = u(X_t, t)\,dt + \alpha\,w(X_t, t)\,dt + s(X_t, t)\,dt + \sqrt{2\kappa(X_t)}\,dW_t$$
 
-where \(X_t\) is particle position and \(u, w, s, \kappa\) are the environmental drivers.
+where $X_t$ is particle position and $u, w, s, \kappa$ are the environmental drivers.
 
 In practice, real plastic motion deviates from this due to unresolved small-scale physics (eddies, beaching, vertical mixing, etc.).
 
@@ -39,14 +37,14 @@ This yields a hybrid model: physics + learned residual.
 
 | Element | Meaning |
 |----------|----------|
-| State (s_t) | Local environment: particle position, velocity field, vorticity, distance to coast, etc. |
-| Action (a_t) | Small correction to the drift velocity (2D vector) |
-| Transition | Physics + correction: \( x_{t+1} = f_{physics}(x_t) + a_t \) |
+| State ($s_t$) | Local environment: particle position, velocity field, vorticity, distance to coast, etc. |
+| Action ($a_t$) | Small correction to the drift velocity (2D vector) |
+| Transition | Physics + correction: $x_{t+1} = f_{physics}(x_t) + a_t$ |
 | Reward | Negative distance between simulated and observed trajectories or fields |
-| Policy | Neural net \( \pi_\theta(a|s) \) mapping local features to corrections |
+| Policy | Neural net $\pi_\theta(a \vert s)$ mapping local features to corrections |
 
 ### Goal
-Find \( \pi_\theta \) that maximizes the similarity between simulated and observed drift data.
+Find $\pi_\theta$ that maximizes the similarity between simulated and observed drift data.
 
 ### Algorithmic View
 - The simulator is **differentiable** (e.g., in JAX).
@@ -65,11 +63,11 @@ Use RL to find where and when to deploy cleanup assets (boats, barriers, drones)
 
 | Element | Meaning |
 |----------|----------|
-| State (s_t) | Plastic concentration map, boat/boom locations, environmental conditions |
-| Action (a_t) | Move boats, deploy/retract booms, or choose next waypoint |
+| State ($s_t$) | Plastic concentration map, boat/boom locations, environmental conditions |
+| Action ($a_t$) | Move boats, deploy/retract booms, or choose next waypoint |
 | Transition | Determined by drift simulator (updated plastic distribution after advection and cleanup) |
 | Reward | Plastic removed − operational cost − constraint penalties |
-| Policy | Strategy \( \pi_\theta(a|s) \) deciding cleanup actions |
+| Policy | Strategy $\pi_\theta(a \vert s)$ deciding cleanup actions |
 
 ### Algorithms
 - **Policy Gradient / Actor–Critic** methods (PPO, A2C) for continuous actions.
@@ -78,10 +76,10 @@ Use RL to find where and when to deploy cleanup assets (boats, barriers, drones)
 
 ---
 
-## 4. How Tasks A and C Interact
+## 4. How Tasks A and B Interact
 
 1. **Train Task A** to correct and calibrate the physical simulator.
-2. **Use that improved simulator** in Task C to optimize real-world cleanup policies.
+2. **Use that improved simulator** in Task B to optimize real-world cleanup policies.
 
 This forms a **two-layer RL system**:
 - Inner layer: model correction.
