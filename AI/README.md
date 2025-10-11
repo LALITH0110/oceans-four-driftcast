@@ -1,124 +1,82 @@
-## Oceans Four DriftCast ![Python Version](https://img.shields.io/badge/Python-3.11+-blue.svg) ![GitHub Repo stars](https://img.shields.io/github/stars/Prana/oceans-four-driftcast?style=social)
+# DriftCast: Reinforcement Learning for North Atlantic Plastic Drift
 
-### Overview
+## Overview
 
-DriftCast is an ocean plastic drift sandbox that marries differentiable advection-diffusion physics with reinforcement learning. Two primary tasks are explored:
+DriftCast couples a differentiable advection–diffusion model with reinforcement learning to improve surface-plastic forecasts and optimize cleanup asset routing.  
+- **Task A – Drift Correction:** learn velocity adjustments that align HYCOM/ERA5 forcing with NOAA GDP drifter trajectories.  
+- **Task B – Cleanup Optimization:** plan asset movements that skim plastic hotspots predicted by the corrected physics.
 
-- **Task A – Model Correction:** Learn velocity corrections that reduce forecast error against drifting buoy observations.
-- **Task B – Cleanup Optimization:** Coordinate cleanup assets to intercept predicted plastic hotspots under realistic forcing.
+All forcing data already lives in `data/raw/...`; the pipeline never downloads anything and gracefully skips months that are missing (HYCOM currents ≥ 2022‑06, CMEMS Stokes drift ≥ 2022‑11, winds and drifters intermittently present).
 
-See `docs/framework.md` for the evolving end-to-end architecture and design notes.
+## Data Layout
 
-### Physics Background
+- Currents: `data/raw/hycom/cmems_currents_YYYY-MM_natl.nc` (`uo`, `vo`)  
+- Stokes drift: `data/raw/waves/cmems_stokes_YYYY-MM_natl.nc` (`vsdx`, `vsdy`) – optional fallback to `stokes_scale * winds`  
+- Winds: `data/raw/era5/era5_u10_v10_YYYY-MM_natl.nc` (`u10`, `v10`)  
+- Drifters: `data/raw/drifters/gdp_drifters_YYYY-MM_YYYY-MM-DD_YYYY-MM-DD_natl_clean.csv`
 
-Plastic particles advance via an advection-diffusion scheme that couples surface currents, winds, and a surface Stokes approximation:
+Longitude axes are normalized to [-180, 180] before subsetting the NATL box (N=60°, S=0°, W=–80°, E=10°).
 
+## How to Run
+
+```powershell
+# 1) Setup
+python -m venv .venv
+. .venv/Scripts/activate            # Windows
+pip install -r requirements.txt
+
+# 2) Quick data check (no downloads; just indexes what’s present)
+python -m main prepare
+
+# 3) Baseline sim (keeps defaults small and fast)
+python -m main simulate --hours 24 --n-particles 2000
+
+# 4) Train RL drift correction (Task A)
+python -m main train-a --timesteps 100000
+
+# 5) Evaluate correction
+python -m main eval-a
+
+# 6) Train cleanup optimization (Task B)
+python -m main train-b --episodes 300
+
+# 7) Predict with uncertainty
+python -m main predict --time "2025-10-11T10:10:00" --pos "40,-50" --hours 24
+
+# 8) Tests & style
+pytest -q
+ruff check .
+black --check .
+mypy src || true   # be pragmatic on typing
 ```
-dx = (u + alpha*w + s)*dt + sqrt(2kappa)*dW
-```
+> **PowerShell tip:** inline Bash heredocs such as `python - <<'PY'` do not work. Use `python -c "..."` or `@'... '@ | python` instead.
 
-where `u` are currents, `w` winds, `s ~= 0.01*w` Stokes drift, and `kappa` a tunable diffusivity. Differentiability via JAX keeps the simulator gradient-friendly for hybrid ML workflows.
+The CLI prints where artefacts live (plots under `docs/plots/`, models under `models/`).
 
-### Setup
+## Components
 
-1. **Environment**
-   ```bash
-   python -m venv .venv
-   # Windows
-   .\.venv\Scripts\activate
-   # macOS/Linux
-   source .venv/bin/activate
+| Module | Purpose |
+|--------|---------|
+| `src/config.py` | Pydantic settings, dataset indexing, longitude normalization helpers. |
+| `src/data_loader.py` | Chunked xarray readers, nearest-time interpolation, drifter ingestion. |
+| `src/simulator.py` | JAX advection–diffusion kernel with windage, optional Stokes drift, and RNG-controlled turbulence. |
+| `src/rl_drift_correction.py` | Gymnasium env + PPO wrappers for Task A, kd-tree matching to drifters, checkpoints & eval. |
+| `src/rl_cleanup.py` | Simple cleanup env and PPO trainer for Task B, plastic-grid rewards. |
+| `src/error_utils.py` | Monte Carlo ensembles, RMSE/ellipse metrics, textual forecasts. |
+| `src/viz.py` | Trajectory plots, plastic heatmaps, optional GIF animation (cartopy fallback). |
+| `src/train_pipeline.py` | Prepare → simulate → train A → evaluate → train B orchestration with logging. |
+| `src/main.py` | CLI subcommands (`prepare`, `simulate`, `train-a`, `eval-a`, `train-b`, `predict`). |
+| `tests/test_all.py` | Pytest smoke tests for loaders, simulator, RL env steps, and error metrics. |
 
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-2. **Credentials**
-   Export provider secrets before requesting fresh data:
-   - `CDS_API_KEY` (Copernicus ERA5)
-   - `CDS_API_URL` (optional override)
-   - `CMEMS_USERNAME`, `CMEMS_PASSWORD` (Copernicus Marine currents)
-   - Any additional downstream API tokens (e.g., drifter feeds)
-3. **Optional Extras**
-   - Install `stable-baselines3` GPU builds for faster RL training.
-   - Configure wandb or TensorBoard credentials if remote logging is desired.
-   > **PowerShell tip:** multi-line Bash heredocs like `python - <<'PY'` do not work. Use `python -c "..."` or `@'... '@ | python` instead.
+## Example Outputs
 
-### Usage
+- `docs/plots/baseline_trajectories.png` – baseline advection vs RL-corrected tracks.  
+- `docs/plots/plastic_heatmap.png` – plastic density before/after cleanup.  
+- `docs/plots/uncertainty_cloud.png` – ensemble spread after 24 h forecast.
 
-- **Baseline simulation**
-  ```bash
-  python main.py --mode simulate --steps 240 --particles 500
-  ```
-- **Train both RL tasks**
-  ```bash
-  python main.py --mode train
-  # or explicitly
-  python -m src.train_pipeline --data-dir data
-  ```
-- **Validate against drifters**
-  ```bash
-  python scripts/validate_against_drifters.py --drifters data/drifters.csv
-  ```
-- **Run regression tests** (requires JAX + test dependencies)
-  ```bash
-  pytest tests/test_all.py
-  ```
+## Limitations & Caveats
 
-Artifacts (models, plots, reports) are written to `models/`, `demos/`, and `runs/` by default.
-
-### Project Structure
-
-- `src/` – Simulation core, RL environments, training pipeline, visualization helpers.
-- `data/` – NetCDF/CSV forcing data (ignored for large binaries).
-- `models/` – Saved RL checkpoints.
-- `docs/` – Framework documentation and research notes.
-- `scripts/` – Data downloaders and validation utilities.
-- `tests/` – Pytest smoke suite for loaders, simulator, RL wrappers, and analytics.
-
-### Data Sources
-
-- **CMEMS HYCOM / GLOBAL_ANALYSIS_FORECAST_PHY** for surface currents.
-- **ERA5 Single Levels** (u10, v10) for wind forcing.
-- **NOAA / GDP Drifter CSVs** (or equivalent) for trajectory validation.
-- Synthetic scaffolds are provided for quick experimentation when live data are unavailable.
-
-### Results
-
-- Quicklook particle trajectories (`docs/quicklook.png`) highlight raw vs. corrected drift.
-- Cleanup heatmaps from `src/viz.py` illustrate plastic concentration decay under trained policies.
-- Ensemble uncertainty plots via `error_utils.plot_uncertainty_cloud` summarize forecast spread.
-
-### Limitations
-
-- Mesoscale eddies and sub-grid turbulence are approximated; high-frequency variability may be under-resolved.
-- Live CMEMS/ERA5 pulls require consistent credentials and may introduce dataset latency.
-- Stable-Baselines3 CPU runs are slow; GPU acceleration is recommended for full-scale training.
-
-### Future Work
-
-- Real-time data assimilation from drifting sensors to refresh state estimates.
-- Domain randomization and transfer learning for broader ocean basins.
-- Multi-objective optimization balancing cleanup efficacy and energy consumption.
-
-### Deployment Suggestion
-
-Wrap `error_utils.predict_location` inside a lightweight Flask API to support operational forecasts:
-
-```python
-from flask import Flask, request, jsonify
-from src import error_utils
-
-app = Flask(__name__)
-
-@app.get("/predict")
-def predict():
-    time_str = request.args.get("time", "2025-10-11T10:10:00")
-    lat, lon = map(float, request.args.get("pos", "40,-50").split(","))
-    result = error_utils.predict_location(time_str, (lat, lon), hours_ahead=24)
-    return jsonify({"summary": result})
-
-if __name__ == "__main__":
-    app.run()
-```
-
-This endpoint could back a government-facing dashboard (`/predict?time=10:10&pos=40,-50`) to deliver hourly location updates with uncertainty bounds.
+- HYCOM and CMEMS wave products are missing before mid‑2022; the pipeline logs warnings and falls back to wind-derived drift.  
+- Sparse drifter coverage south of ~10°N limits reward density; Task A down-weights unmatched particles.  
+- Mesoscale eddies remain under-resolved; policy defaults target 24–48 h windows to keep computations tractable.  
+- GPU acceleration is optional but recommended for long PPO runs (see requirements header for CUDA installs).
