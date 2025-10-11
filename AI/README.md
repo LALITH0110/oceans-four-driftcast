@@ -41,6 +41,7 @@ where `u` are currents, `w` winds, `s ~= 0.01*w` Stokes drift, and `kappa` a tun
 3. **Optional Extras**
    - Install `stable-baselines3` GPU builds for faster RL training.
    - Configure wandb or TensorBoard credentials if remote logging is desired.
+   > **PowerShell tip:** multi-line Bash heredocs like `python - <<'PY'` do not work. Use `python -c "..."` or `@'... '@ | python` instead.
 
 ### Usage
 
