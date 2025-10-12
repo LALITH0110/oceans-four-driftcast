@@ -22,4 +22,3 @@ notebooks/.ipynb_checkpoints/
 # IDE & OS specific
 .DS_Store
 Thumbs.db
-docs/plots/
