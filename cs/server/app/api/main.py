@@ -129,9 +129,33 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             elif message_type == "task_completed":
                 # Client completed a task
                 task_id = data.get("task_id")
-                result_data = data.get("result_data", "").encode()
+                result_data_hex = data.get("result_data", "")
+                execution_time = data.get("execution_time", 0)
+                
+                # Convert hex back to bytes
+                try:
+                    result_data = bytes.fromhex(result_data_hex)
+                except ValueError:
+                    result_data = result_data_hex.encode()
                 
                 success = await task_scheduler.complete_task(task_id, client_id, result_data)
+                
+                # Store result in database
+                if success:
+                    from app.models.database import TaskResult
+                    from app.config.database import get_async_session
+                    
+                    async for session in get_async_session():
+                        task_result = TaskResult(
+                            task_id=task_id,
+                            client_id=client_id,
+                            result_data=result_data,
+                            execution_time=execution_time,
+                            quality_score=1.0
+                        )
+                        session.add(task_result)
+                        await session.commit()
+                        break
                 
                 await connection_manager.send_personal_message(
                     {"type": "task_completion_ack", "task_id": task_id, "success": success},

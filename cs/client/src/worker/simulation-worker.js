@@ -34,9 +34,16 @@ class SimulationWorker {
                 result_data: resultData,
                 particle_count: particleCount,
                 execution_time: Date.now() - this.startTime,
+                user_id: "lalith", // Your user ID
                 metadata: {
                     particles_processed: results.length,
-                    simulation_steps: parameters.time_steps || 100
+                    simulation_steps: parameters.time_steps || 100,
+                    simulation_type: results[0]?.rl_enhanced ? 'rl_enhanced' : 'physics_only',
+                    client_info: {
+                        platform: process.platform,
+                        arch: process.arch,
+                        node_version: process.version
+                    }
                 }
             };
             
@@ -52,9 +59,97 @@ class SimulationWorker {
     }
     
     async simulateParticleDrift(inputData, parameters, particleCount) {
-        // This is a simplified simulation for demonstration
-        // In a real implementation, this would use actual ocean current data
-        // and physics-based particle tracking algorithms
+        // Use the RL-enhanced drift simulation from AI/igoel
+        console.log(`Running RL-enhanced drift simulation for user: lalith`);
+        
+        try {
+            // Prepare task data for Python script
+            const taskData = {
+                particle_count: particleCount,
+                parameters: {
+                    time_horizon: parameters.time_horizon || 72,
+                    spatial_bounds: parameters.spatial_bounds || {},
+                    ...parameters
+                },
+                input_data: inputData.toString('hex'),
+                task_id: this.taskData.task_id
+            };
+            
+            // Call Python RL simulation
+            const results = await this.callRLSimulation(taskData);
+            
+            if (results.success) {
+                console.log(`RL simulation completed successfully. Type: ${results.simulation_type}`);
+                return results.results;
+            } else {
+                console.error(`RL simulation failed: ${results.error}`);
+                // Fallback to original simulation
+                return await this.fallbackSimulation(inputData, parameters, particleCount);
+            }
+            
+        } catch (error) {
+            console.error(`Error in RL simulation: ${error.message}`);
+            // Fallback to original simulation
+            return await this.fallbackSimulation(inputData, parameters, particleCount);
+        }
+    }
+    
+    async callRLSimulation(taskData) {
+        const { spawn } = require('child_process');
+        const path = require('path');
+        
+        return new Promise((resolve, reject) => {
+            // Path to the Python script
+            const pythonScript = path.join(__dirname, 'rl_drift_simulation.py');
+            const taskDataJson = JSON.stringify(taskData);
+            
+            console.log(`Calling Python RL simulation: ${pythonScript}`);
+            
+            // Spawn Python process
+            const pythonProcess = spawn('python3', [pythonScript, taskDataJson], {
+                stdio: ['pipe', 'pipe', 'pipe']
+            });
+            
+            let stdout = '';
+            let stderr = '';
+            
+            pythonProcess.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+            
+            pythonProcess.stderr.on('data', (data) => {
+                stderr += data.toString();
+                console.log(`Python stderr: ${data.toString()}`);
+            });
+            
+            pythonProcess.on('close', (code) => {
+                if (code === 0) {
+                    try {
+                        const result = JSON.parse(stdout);
+                        resolve(result);
+                    } catch (parseError) {
+                        reject(new Error(`Failed to parse Python output: ${parseError.message}`));
+                    }
+                } else {
+                    reject(new Error(`Python process exited with code ${code}. stderr: ${stderr}`));
+                }
+            });
+            
+            pythonProcess.on('error', (error) => {
+                reject(new Error(`Failed to start Python process: ${error.message}`));
+            });
+            
+            // Set timeout
+            setTimeout(() => {
+                pythonProcess.kill();
+                reject(new Error('Python simulation timed out'));
+            }, 300000); // 5 minute timeout
+        });
+    }
+    
+    async fallbackSimulation(inputData, parameters, particleCount) {
+        // Original simulation code as fallback
+        console.log('Using fallback simulation');
         
         const results = [];
         const timeSteps = parameters.time_steps || 100;
@@ -70,7 +165,7 @@ class SimulationWorker {
             // Report progress occasionally
             if (step % 10 === 0) {
                 const progress = (step / timeSteps) * 100;
-                console.log(`Task ${this.taskData.task_id} progress: ${progress.toFixed(1)}%`);
+                console.log(`Task ${this.taskData.task_id} fallback progress: ${progress.toFixed(1)}%`);
             }
             
             // Add some realistic processing delay
