@@ -37,6 +37,13 @@ class TaskManager {
         this.isRunning = true;
         this.isPaused = false;
         
+        // Listen for task assignments from WebSocket
+        const { ipcMain } = require('electron');
+        ipcMain.on('task-assignment', (taskData) => {
+            log.info(`Task manager received assignment: ${taskData.task_id}`);
+            this.processTask(taskData);
+        });
+        
         // Start periodic task requests (every 30 seconds)
         this.taskRequestJob = cron.schedule('*/30 * * * * *', async () => {
             if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {

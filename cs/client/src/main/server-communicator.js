@@ -10,7 +10,7 @@ const store = new Store();
 
 class ServerCommunicator {
     constructor() {
-        this.serverUrl = store.get('serverUrl', 'http://localhost:8000');
+        this.serverUrl = 'http://system80.rice.iit.edu:8000'; // Hardcoded for testing
         this.wsUrl = this.serverUrl.replace('http', 'ws');
         this.clientId = null;
         this.token = null;
@@ -180,7 +180,8 @@ class ServerCommunicator {
                 
             case 'task_assignment':
                 // New task assigned
-                this.handleTaskAssignment(message.task);
+                log.info(`Received task assignment: ${message.task.task_id}`);
+                await this.handleTaskAssignment(message.task);
                 break;
                 
             case 'no_tasks_available':
@@ -213,11 +214,11 @@ class ServerCommunicator {
     }
     
     async handleTaskAssignment(taskData) {
-        log.info(`Received task assignment: ${taskData.task_id}`);
+        log.info(`Processing task assignment: ${taskData.task_id}`);
         
-        // Forward to task manager
-        const TaskManager = require('./task-manager');
-        // This would be handled by the task manager instance
+        // Emit event for task manager to handle
+        const { ipcMain } = require('electron');
+        ipcMain.emit('task-assignment', taskData);
     }
     
     sendWebSocketMessage(message) {
@@ -289,12 +290,16 @@ class ServerCommunicator {
     
     async submitTaskResult(taskId, resultData, executionTime) {
         try {
+            // Convert result data to hex string for server
+            const resultJson = JSON.stringify(resultData);
+            const resultHex = Buffer.from(resultJson, 'utf8').toString('hex');
+            
             // Try WebSocket first
             if (this.isConnected) {
                 this.sendWebSocketMessage({
                     type: 'task_completed',
                     task_id: taskId,
-                    result_data: resultData,
+                    result_data: resultHex,
                     execution_time: executionTime / 1000 // Convert to seconds
                 });
                 return;
@@ -303,7 +308,7 @@ class ServerCommunicator {
             // Fallback to HTTP API
             await this.api.post('/api/v1/tasks/complete', {
                 task_id: taskId,
-                result_data: resultData,
+                result_data: resultHex,
                 execution_time: executionTime / 1000,
                 metadata: {}
             });

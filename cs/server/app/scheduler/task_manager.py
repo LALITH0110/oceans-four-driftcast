@@ -50,6 +50,8 @@ class WorkUnit:
     priority: int
     deadline: datetime
     retry_count: int = 0
+    assigned_client: Optional[str] = None
+    assigned_at: Optional[datetime] = None
 
 class TaskScheduler:
     def __init__(self):
@@ -173,12 +175,9 @@ class TaskScheduler:
                 "priority": work_unit.priority
             }
             
-            # Send task to Celery worker
-            celery_app.send_task(
-                'app.workers.simulation_worker.process_task',
-                args=[task_data, client_id],
-                task_id=work_unit.id
-            )
+            # Mark task as assigned to this client (don't use Celery for direct client communication)
+            work_unit.assigned_client = client_id
+            work_unit.assigned_at = datetime.utcnow()
             
             logger.info(f"Assigned task {work_unit.id} to client {client_id}")
             return task_data
