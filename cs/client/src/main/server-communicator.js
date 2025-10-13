@@ -141,10 +141,10 @@ class ServerCommunicator {
                     resolve();
                 });
                 
-                this.websocket.on('message', (data) => {
+                this.websocket.on('message', async (data) => {
                     try {
                         const message = JSON.parse(data);
-                        this.handleWebSocketMessage(message);
+                        await this.handleWebSocketMessage(message);
                     } catch (error) {
                         log.error('Error parsing WebSocket message:', error);
                     }
@@ -170,7 +170,7 @@ class ServerCommunicator {
         });
     }
     
-    handleWebSocketMessage(message) {
+    async handleWebSocketMessage(message) {
         log.debug('Received WebSocket message:', message.type);
         
         switch (message.type) {
