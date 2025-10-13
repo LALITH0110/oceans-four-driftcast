@@ -22,3 +22,7 @@ notebooks/.ipynb_checkpoints/
 # IDE & OS specific
 .DS_Store
 Thumbs.db
+
+
+igoel/ppo_drift_tensorboard/
+igoel/ppo_drift_model.zip
