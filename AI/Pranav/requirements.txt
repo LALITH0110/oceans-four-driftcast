@@ -1,0 +1,21 @@
+# Core dependencies
+numpy>=1.21.0
+matplotlib>=3.5.0
+scipy>=1.7.0
+
+# Deep learning (for full RL version)
+torch>=1.10.0
+
+# Data handling
+xarray>=0.20.0
+netCDF4>=1.5.8
+pandas>=1.3.0
+
+# Real ocean data sources
+copernicusmarine>=1.0.0  # CMEMS data
+cdsapi>=0.5.1            # ERA5 wind data
+
+# Optional but recommended
+cartopy>=0.20.0          # Better map projections
+seaborn>=0.11.0          # Enhanced plotting
+jupyterlab>=3.0.0        # Interactive notebooks
