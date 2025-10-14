@@ -1,15 +1,7 @@
 """
-GLOBAL OCEAN PLASTIC PREDICTION WITH DEEP RL
-==============================================
-Advanced system with animations, global coverage, and comprehensive RL training
-
-Features:
-- Global map coverage with realistic ocean currents
-- Multi-year historical simulation (2020-2025)
-- Improved Deep RL with visual proof of learning
-- Animated GIFs showing plastic movement and RL convergence
-- Extensive validation and visualization
-- JSON export with detailed metrics
+FIXED GLOBAL OCEAN PLASTIC PREDICTION WITH DEEP RL
+===================================================
+Actually working version with visible results and real ocean data
 
 Author: Oceans Four - DriftCast Team
 Date: 2025
@@ -28,16 +20,10 @@ import random
 from datetime import datetime, timedelta
 import json
 import warnings
+import pandas as pd
+import xarray as xr
+from scipy.interpolate import RegularGridInterpolator
 warnings.filterwarnings('ignore')
-
-# Try to import optional dependencies
-try:
-    import cartopy.crs as ccrs
-    import cartopy.feature as cfeature
-    HAS_CARTOPY = True
-except ImportError:
-    HAS_CARTOPY = False
-    print("⚠️  Install cartopy for better maps: pip install cartopy")
 
 try:
     from PIL import Image
@@ -49,329 +35,284 @@ except ImportError:
 # ==================== CONFIGURATION ====================
 class Config:
     """Global configuration"""
-    # Global domain
-    LAT_MIN, LAT_MAX = -60.0, 70.0  # Global coverage
-    LON_MIN, LON_MAX = -180.0, 180.0
-    GRID_RES = 1.0  # 1 degree resolution
+    # Domain (focused on North Atlantic for testing)
+    LAT_MIN, LAT_MAX = 20.0, 50.0
+    LON_MIN, LON_MAX = -80.0, -20.0
     
-    # Time settings - Multi-year simulation
-    START_DATE = datetime(2020, 1, 1)
+    # Time settings - Shorter for testing
+    START_DATE = datetime(2025, 10, 1)
     END_DATE = datetime(2025, 10, 13)
     TOTAL_DAYS = (END_DATE - START_DATE).days
-    DT_DAYS = 7  # Weekly timesteps (balance between detail and computation)
-    TOTAL_STEPS = TOTAL_DAYS // DT_DAYS
+    DT_HOURS = 6  # 6-hour timesteps
+    TOTAL_STEPS = (TOTAL_DAYS * 24) // DT_HOURS
     
-    # Ensemble
-    N_PARTICLES = 30  # Per release point
-    N_RELEASE_POINTS = 25  # Major ocean pollution sources worldwide
+    # Particles
+    N_PARTICLES = 50  # Per release point
+    N_RELEASE_POINTS = 5  # Test sources
     
     # Physics
     WINDAGE = 0.03
-    STOKES_COEFF = 0.016
-    DIFFUSION_KM = 10.0  # Per week
-    BIOFOULING_WEEKS = 4
+    DIFFUSION_KM = 2.0  # Per timestep
     
     # RL Configuration
-    RL_HIDDEN = 512  # Larger network
-    RL_LAYERS = 3
-    LEARNING_RATE = 0.0005
-    BATCH_SIZE = 64
-    MEMORY_SIZE = 50000
-    GAMMA = 0.99
+    RL_HIDDEN = 128
+    LEARNING_RATE = 0.001
+    BATCH_SIZE = 32
+    MEMORY_SIZE = 10000
+    GAMMA = 0.95
     EPSILON_START = 1.0
-    EPSILON_END = 0.01
-    EPSILON_DECAY = 0.9995
-    TARGET_UPDATE = 10
+    EPSILON_END = 0.05
+    EPSILON_DECAY = 0.995
+    TARGET_UPDATE = 5
     
     # Visualization
-    FPS = 10
-    DPI = 150
+    FPS = 5
+    DPI = 100
 
-# ==================== GLOBAL OCEAN ENVIRONMENT ====================
-class GlobalOceanEnvironment:
-    """Realistic global ocean with major currents"""
+# ==================== LOAD REAL OCEAN DATA ====================
+class RealOceanEnvironment:
+    """Load and interpolate real ocean currents"""
     
-    def __init__(self):
-        print("🌍 Generating global ocean environment...")
+    def __init__(self, data_file='ocean_data_csv/cmems_currents.csv'):
+        print("🌊 Loading real ocean data...")
         
-        self.lats = np.arange(Config.LAT_MIN, Config.LAT_MAX + Config.GRID_RES, Config.GRID_RES)
-        self.lons = np.arange(Config.LON_MIN, Config.LON_MAX + Config.GRID_RES, Config.GRID_RES)
-        self.LON, self.LAT = np.meshgrid(self.lons, self.lats)
-        
-        self._generate_global_currents()
-        self._generate_wind_fields()
-        self._create_land_mask()
-        
-        print(f"✓ Ocean grid: {len(self.lats)} x {len(self.lons)}")
-        print(f"✓ Max current: {np.max(np.sqrt(self.u**2 + self.v**2)):.2f} m/s")
-    
-    def _generate_global_currents(self):
-        """Generate realistic global ocean currents"""
-        self.u = np.zeros_like(self.LON)
-        self.v = np.zeros_like(self.LAT)
-        
-        # Atlantic: Gulf Stream
-        mask_atlantic = (self.LON > -80) & (self.LON < -30) & (self.LAT > 25) & (self.LAT < 55)
-        gulf_stream_lat = 38 + 3 * np.sin(self.LON[mask_atlantic] / 10)
-        intensity = 1.2 * np.exp(-((self.LAT[mask_atlantic] - gulf_stream_lat) / 4) ** 2)
-        self.u[mask_atlantic] += intensity
-        self.v[mask_atlantic] += 0.3 * np.sin(self.LON[mask_atlantic] / 8)
-        
-        # Pacific: Kuroshio Current
-        mask_kuroshio = (self.LON > 120) & (self.LON < 160) & (self.LAT > 20) & (self.LAT < 45)
-        kuroshio_lat = 35 + 2 * np.sin(self.LON[mask_kuroshio] / 15)
-        intensity = 1.5 * np.exp(-((self.LAT[mask_kuroshio] - kuroshio_lat) / 3) ** 2)
-        self.u[mask_kuroshio] += intensity
-        self.v[mask_kuroshio] += 0.4 * np.sin(self.LON[mask_kuroshio] / 10)
-        
-        # Equatorial currents
-        mask_eq = (self.LAT > -10) & (self.LAT < 10)
-        self.u[mask_eq] += 0.5 * np.cos(np.radians(self.LAT[mask_eq] * 3))
-        
-        # Subtropical gyres (all major oceans)
-        gyres = [
-            (-40, 30, 15, 0.6),   # North Atlantic
-            (-150, 30, 20, 0.7),  # North Pacific
-            (80, -30, 18, 0.5),   # South Indian
-            (-100, -30, 16, 0.5), # South Pacific
-            (-20, -30, 14, 0.4)   # South Atlantic
-        ]
-        
-        for gyre_lon, gyre_lat, radius, strength in gyres:
-            r = np.sqrt((self.LAT - gyre_lat)**2 + (self.LON - gyre_lon)**2)
-            gyre_mask = r < radius * 2
-            gyre_field = strength * np.exp(-r[gyre_mask]**2 / radius**2)
+        # Try CSV first
+        if data_file.endswith('.nc'):
+            csv_file = data_file.replace('.nc', '.csv')
+            if csv_file.replace('ocean_data/', 'ocean_data_csv/'):
+                csv_file = csv_file.replace('ocean_data/', 'ocean_data_csv/')
+        else:
+            csv_file = data_file
             
-            # Circular flow
-            self.u[gyre_mask] += -gyre_field * (self.LAT[gyre_mask] - gyre_lat) / radius
-            self.v[gyre_mask] += gyre_field * (self.LON[gyre_mask] - gyre_lon) / radius
+        try:
+            self._load_from_csv(csv_file)
+        except Exception as e:
+            print(f"⚠️  Could not load CSV: {e}")
+            try:
+                self._load_from_netcdf(data_file)
+            except Exception as e2:
+                print(f"⚠️  Could not load NetCDF: {e2}")
+                print("  Using synthetic currents instead")
+                self.has_real_data = False
+                self._generate_synthetic_currents()
+    
+    def _load_from_csv(self, csv_file):
+        """Load ocean data from CSV"""
+        print(f"  Loading from CSV: {csv_file}")
         
-        # Antarctic Circumpolar Current
-        mask_acc = (self.LAT < -40) & (self.LAT > -60)
-        self.u[mask_acc] += 0.8 * np.ones_like(self.u[mask_acc])
+        df = pd.read_csv(csv_file)
         
-        # Add mesoscale eddies
-        n_eddies = 50
-        for _ in range(n_eddies):
-            eddy_lon = np.random.uniform(-180, 180)
-            eddy_lat = np.random.uniform(-50, 50)
-            eddy_radius = np.random.uniform(3, 8)
-            eddy_strength = np.random.uniform(0.1, 0.4)
+        # Parse columns: time, depth, latitude, longitude, uo, vo
+        df['time'] = pd.to_datetime(df['time'])
+        
+        # Get unique coordinates
+        self.times = sorted(df['time'].unique())
+        self.lats = sorted(df['latitude'].unique())
+        self.lons = sorted(df['longitude'].unique())
+        
+        # Use surface level only (depth=0 or minimum depth)
+        if 'depth' in df.columns:
+            min_depth = df['depth'].min()
+            df = df[df['depth'] == min_depth]
+        
+        # Create 3D arrays [time, lat, lon]
+        n_times = len(self.times)
+        n_lats = len(self.lats)
+        n_lons = len(self.lons)
+        
+        self.u_data = np.zeros((n_times, n_lats, n_lons))
+        self.v_data = np.zeros((n_times, n_lats, n_lons))
+        
+        # Fill arrays
+        for idx, row in df.iterrows():
+            t_idx = self.times.index(row['time'])
+            lat_idx = self.lats.index(row['latitude'])
+            lon_idx = self.lons.index(row['longitude'])
             
-            r = np.sqrt((self.LAT - eddy_lat)**2 + (self.LON - eddy_lon)**2)
-            eddy_mask = r < eddy_radius * 2
-            eddy_field = eddy_strength * np.exp(-r[eddy_mask]**2 / eddy_radius**2)
+            self.u_data[t_idx, lat_idx, lon_idx] = row['uo']
+            self.v_data[t_idx, lat_idx, lon_idx] = row['vo']
+        
+        # Handle NaN
+        self.u_data = np.nan_to_num(self.u_data, 0.0)
+        self.v_data = np.nan_to_num(self.v_data, 0.0)
+        
+        # Convert to numpy arrays
+        self.lats = np.array(self.lats)
+        self.lons = np.array(self.lons)
+        
+        print(f"✓ Loaded CSV data: {len(self.times)} timesteps")
+        print(f"  Lat range: {self.lats.min():.1f} to {self.lats.max():.1f}")
+        print(f"  Lon range: {self.lons.min():.1f} to {self.lons.max():.1f}")
+        print(f"  Max current: {np.nanmax(np.sqrt(self.u_data**2 + self.v_data**2)):.3f} m/s")
+        
+        self.has_real_data = True
+    
+    def _load_from_netcdf(self, nc_file):
+        """Load ocean data from NetCDF"""
+        ds = xr.open_dataset(nc_file)
+        
+        # Extract variables
+        self.times = pd.to_datetime(ds['time'].values)
+        self.depths = ds['depth'].values if 'depth' in ds else [0]
+        self.lats = ds['latitude'].values
+        self.lons = ds['longitude'].values
+        
+        # Get surface currents (depth = 0 or first level)
+        depth_idx = 0
+        self.u_data = ds['uo'].isel(depth=depth_idx).values  # [time, lat, lon]
+        self.v_data = ds['vo'].isel(depth=depth_idx).values
+        
+        # Handle NaN values
+        self.u_data = np.nan_to_num(self.u_data, 0.0)
+        self.v_data = np.nan_to_num(self.v_data, 0.0)
+        
+        ds.close()
+        
+        print(f"✓ Loaded NetCDF data: {len(self.times)} timesteps")
+        print(f"  Lat range: {self.lats.min():.1f} to {self.lats.max():.1f}")
+        print(f"  Lon range: {self.lons.min():.1f} to {self.lons.max():.1f}")
+        print(f"  Max current: {np.nanmax(np.sqrt(self.u_data**2 + self.v_data**2)):.3f} m/s")
+        
+        self.has_real_data = True
+    
+    def _generate_synthetic_currents(self):
+        """Generate synthetic but realistic currents"""
+        self.lats = np.linspace(Config.LAT_MIN, Config.LAT_MAX, 50)
+        self.lons = np.linspace(Config.LON_MIN, Config.LON_MAX, 80)
+        LON, LAT = np.meshgrid(self.lons, self.lats)
+        
+        # Gulf Stream approximation
+        gulf_lat = 35 + 2 * np.sin((LON + 70) / 10)
+        intensity = 0.8 * np.exp(-((LAT - gulf_lat) / 3) ** 2)
+        
+        self.u_data = np.zeros((Config.TOTAL_STEPS, len(self.lats), len(self.lons)))
+        self.v_data = np.zeros((Config.TOTAL_STEPS, len(self.lats), len(self.lons)))
+        
+        for t in range(Config.TOTAL_STEPS):
+            phase = 2 * np.pi * t / 20
+            self.u_data[t] = intensity * (1 + 0.3 * np.sin(phase))
+            self.v_data[t] = 0.2 * np.sin((LON + 50) / 8) * np.cos(phase)
             
-            self.u[eddy_mask] += -eddy_field * (self.LAT[eddy_mask] - eddy_lat) / eddy_radius
-            self.v[eddy_mask] += eddy_field * (self.LON[eddy_mask] - eddy_lon) / eddy_radius
+            # Add eddies
+            for _ in range(3):
+                eddy_lon = np.random.uniform(Config.LON_MIN, Config.LON_MAX)
+                eddy_lat = np.random.uniform(Config.LAT_MIN, Config.LAT_MAX)
+                r = np.sqrt((LAT - eddy_lat)**2 + (LON - eddy_lon)**2)
+                eddy = 0.3 * np.exp(-r**2 / 9)
+                self.u_data[t] += -eddy * (LAT - eddy_lat)
+                self.v_data[t] += eddy * (LON - eddy_lon)
     
-    def _generate_wind_fields(self):
-        """Generate realistic wind patterns"""
-        self.u_wind = np.zeros_like(self.LON)
-        self.v_wind = np.zeros_like(self.LAT)
+    def get_velocity(self, lat, lon, time_idx):
+        """Interpolate velocity at location and time"""
+        time_idx = int(np.clip(time_idx, 0, len(self.u_data) - 1))
         
-        # Trade winds (0-30° both hemispheres)
-        mask_trades_n = (self.LAT > 0) & (self.LAT < 30)
-        self.u_wind[mask_trades_n] = 6.0
-        self.v_wind[mask_trades_n] = -1.0
-        
-        mask_trades_s = (self.LAT < 0) & (self.LAT > -30)
-        self.u_wind[mask_trades_s] = 6.0
-        self.v_wind[mask_trades_s] = 1.0
-        
-        # Westerlies (30-60° both hemispheres)
-        mask_west_n = (self.LAT > 30) & (self.LAT < 60)
-        self.u_wind[mask_west_n] = -8.0
-        self.v_wind[mask_west_n] = 0.5
-        
-        mask_west_s = (self.LAT < -30) & (self.LAT > -60)
-        self.u_wind[mask_west_s] = -10.0
-        self.v_wind[mask_west_s] = -0.5
-        
-        # Add variability
-        self.u_wind += np.random.randn(*self.u_wind.shape) * 1.5
-        self.v_wind += np.random.randn(*self.v_wind.shape) * 1.5
-        
-        # Stokes drift
-        self.u_stokes = Config.STOKES_COEFF * self.u_wind
-        self.v_stokes = Config.STOKES_COEFF * self.v_wind
-    
-    def _create_land_mask(self):
-        """Simple land mask"""
-        self.is_ocean = np.ones_like(self.LAT, dtype=bool)
-        
-        # Major landmasses (simplified)
-        # North America
-        self.is_ocean[(self.LAT > 25) & (self.LAT < 70) & 
-                     (self.LON > -140) & (self.LON < -50)] = False
-        
-        # South America
-        self.is_ocean[(self.LAT > -55) & (self.LAT < 12) & 
-                     (self.LON > -80) & (self.LON < -35)] = False
-        
-        # Europe
-        self.is_ocean[(self.LAT > 35) & (self.LAT < 70) & 
-                     (self.LON > -10) & (self.LON < 40)] = False
-        
-        # Africa
-        self.is_ocean[(self.LAT > -35) & (self.LAT < 37) & 
-                     (self.LON > -20) & (self.LON < 52)] = False
-        
-        # Asia
-        self.is_ocean[(self.LAT > 5) & (self.LAT < 70) & 
-                     (self.LON > 25) & (self.LON < 180)] = False
-        
-        # Australia
-        self.is_ocean[(self.LAT > -45) & (self.LAT < -10) & 
-                     (self.LON > 110) & (self.LON < 155)] = False
-    
-    def get_velocity(self, lat, lon, time_step):
-        """Get interpolated velocity at position and time"""
-        # Handle wraparound longitude
-        lon = ((lon + 180) % 360) - 180
-        
-        # Find grid indices
-        lat_idx = np.clip((lat - Config.LAT_MIN) / Config.GRID_RES, 0, len(self.lats) - 2)
-        lon_idx = np.clip((lon - Config.LON_MIN) / Config.GRID_RES, 0, len(self.lons) - 2)
-        
-        i, j = int(lat_idx), int(lon_idx)
-        di, dj = lat_idx - i, lon_idx - j
+        # Bounds checking
+        if lat < self.lats.min() or lat > self.lats.max():
+            return {'u': 0.0, 'v': 0.0, 'is_ocean': False}
+        if lon < self.lons.min() or lon > self.lons.max():
+            return {'u': 0.0, 'v': 0.0, 'is_ocean': False}
         
         # Bilinear interpolation
-        def interp(field):
-            return ((1-di)*(1-dj)*field[i,j] + di*(1-dj)*field[i+1,j] +
-                   (1-di)*dj*field[i,j+1] + di*dj*field[i+1,j+1])
+        lat_idx = np.searchsorted(self.lats, lat) - 1
+        lon_idx = np.searchsorted(self.lons, lon) - 1
         
-        u_ocean = interp(self.u)
-        v_ocean = interp(self.v)
-        u_wind = interp(self.u_wind)
-        v_wind = interp(self.v_wind)
-        u_stokes = interp(self.u_stokes)
-        v_stokes = interp(self.v_stokes)
-        is_ocean = interp(self.is_ocean) > 0.5
+        lat_idx = np.clip(lat_idx, 0, len(self.lats) - 2)
+        lon_idx = np.clip(lon_idx, 0, len(self.lons) - 2)
         
-        # Add time-varying component (seasonal + tidal)
-        seasonal_phase = 2 * np.pi * time_step / 52  # Annual cycle (52 weeks)
-        tidal_phase = 2 * np.pi * time_step / 2  # Semi-weekly tide proxy
+        lat_frac = (lat - self.lats[lat_idx]) / (self.lats[lat_idx + 1] - self.lats[lat_idx])
+        lon_frac = (lon - self.lons[lon_idx]) / (self.lons[lon_idx + 1] - self.lons[lon_idx])
         
-        u_ocean += 0.15 * np.cos(seasonal_phase + lon * 0.05)
-        v_ocean += 0.15 * np.sin(seasonal_phase + lat * 0.05)
-        u_ocean += 0.05 * np.cos(tidal_phase)
-        v_ocean += 0.05 * np.sin(tidal_phase)
+        u = ((1 - lat_frac) * (1 - lon_frac) * self.u_data[time_idx, lat_idx, lon_idx] +
+             lat_frac * (1 - lon_frac) * self.u_data[time_idx, lat_idx + 1, lon_idx] +
+             (1 - lat_frac) * lon_frac * self.u_data[time_idx, lat_idx, lon_idx + 1] +
+             lat_frac * lon_frac * self.u_data[time_idx, lat_idx + 1, lon_idx + 1])
         
-        return {
-            'u_ocean': u_ocean,
-            'v_ocean': v_ocean,
-            'u_wind': u_wind,
-            'v_wind': v_wind,
-            'u_stokes': u_stokes,
-            'v_stokes': v_stokes,
-            'is_ocean': is_ocean
-        }
+        v = ((1 - lat_frac) * (1 - lon_frac) * self.v_data[time_idx, lat_idx, lon_idx] +
+             lat_frac * (1 - lon_frac) * self.v_data[time_idx, lat_idx + 1, lon_idx] +
+             (1 - lat_frac) * lon_frac * self.v_data[time_idx, lat_idx, lon_idx + 1] +
+             lat_frac * lon_frac * self.v_data[time_idx, lat_idx + 1, lon_idx + 1])
+        
+        return {'u': float(u), 'v': float(v), 'is_ocean': True}
 
 # ==================== PLASTIC PARTICLE ====================
 class PlasticParticle:
-    """Individual plastic particle"""
+    """Individual plastic particle with proper physics"""
     
-    def __init__(self, lat, lon, time_step):
+    def __init__(self, lat, lon, start_time):
         self.lat = lat
         self.lon = lon
-        self.age_weeks = 0
-        self.biofouling = 0.0
+        self.start_time = start_time
+        self.trajectory = [(lat, lon)]
         self.beached = False
-        self.start_step = time_step
-        self.trajectory = [(lat, lon, time_step)]
     
-    def update(self, env, time_step):
-        """Update particle position"""
+    def update(self, env, time_idx):
+        """Update particle position using ocean currents"""
         if self.beached:
             return
         
-        vel = env.get_velocity(self.lat, self.lon, time_step)
+        vel = env.get_velocity(self.lat, self.lon, time_idx)
         
         if not vel['is_ocean']:
             self.beached = True
             return
         
-        # Total velocity
-        windage = Config.WINDAGE * (1 - 0.8 * self.biofouling)
-        stokes_factor = 1.0 - 0.5 * self.biofouling
+        # Convert velocity (m/s) to displacement (degrees per timestep)
+        hours = Config.DT_HOURS
+        m_per_degree_lat = 111320.0
+        m_per_degree_lon = 111320.0 * np.cos(np.radians(self.lat))
         
-        u_total = (vel['u_ocean'] + 
-                  windage * vel['u_wind'] + 
-                  stokes_factor * vel['u_stokes'])
-        v_total = (vel['v_ocean'] + 
-                  windage * vel['v_wind'] + 
-                  stokes_factor * vel['v_stokes'])
+        # Displacement in meters
+        dx_m = vel['u'] * hours * 3600
+        dy_m = vel['v'] * hours * 3600
         
-        # Diffusion
-        diff_std = Config.DIFFUSION_KM / 111.0  # degrees
-        u_total += np.random.randn() * diff_std
-        v_total += np.random.randn() * diff_std
+        # Add diffusion
+        diff_m = Config.DIFFUSION_KM * 1000
+        dx_m += np.random.randn() * diff_m
+        dy_m += np.random.randn() * diff_m
         
-        # Update position (velocity in m/s, convert to degrees per week)
-        seconds_per_week = 7 * 24 * 3600
-        m_per_degree = 111320.0
+        # Convert to degrees
+        dlon = dx_m / m_per_degree_lon
+        dlat = dy_m / m_per_degree_lat
         
-        dlat = v_total * seconds_per_week / m_per_degree
-        dlon = u_total * seconds_per_week / (m_per_degree * np.cos(np.radians(self.lat)))
-        
-        self.lat += dlat
+        # Update position
         self.lon += dlon
+        self.lat += dlat
         
-        # Wrap longitude
-        self.lon = ((self.lon + 180) % 360) - 180
-        
-        # Clip latitude
+        # Keep in bounds
         self.lat = np.clip(self.lat, Config.LAT_MIN, Config.LAT_MAX)
+        self.lon = np.clip(self.lon, Config.LON_MIN, Config.LON_MAX)
         
-        # Update properties
-        self.age_weeks += 1
-        self.biofouling = min(1.0, self.age_weeks / Config.BIOFOULING_WEEKS)
-        
-        self.trajectory.append((self.lat, self.lon, time_step))
+        self.trajectory.append((self.lat, self.lon))
 
 # ==================== DEEP RL AGENT ====================
-class ImprovedDQN(nn.Module):
-    """Enhanced DQN with residual connections"""
+class DQN(nn.Module):
+    """Deep Q-Network"""
     
     def __init__(self, state_dim, action_dim):
-        super(ImprovedDQN, self).__init__()
+        super(DQN, self).__init__()
         
-        self.fc1 = nn.Linear(state_dim, Config.RL_HIDDEN)
-        self.fc2 = nn.Linear(Config.RL_HIDDEN, Config.RL_HIDDEN)
-        self.fc3 = nn.Linear(Config.RL_HIDDEN, Config.RL_HIDDEN)
-        self.fc4 = nn.Linear(Config.RL_HIDDEN, action_dim)
-        
-        self.ln1 = nn.LayerNorm(Config.RL_HIDDEN)
-        self.ln2 = nn.LayerNorm(Config.RL_HIDDEN)
-        
-        self.dropout = nn.Dropout(0.1)
-        
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, Config.RL_HIDDEN),
+            nn.ReLU(),
+            nn.Linear(Config.RL_HIDDEN, Config.RL_HIDDEN),
+            nn.ReLU(),
+            nn.Linear(Config.RL_HIDDEN, action_dim)
+        )
+    
     def forward(self, x):
-        x1 = torch.relu(self.ln1(self.fc1(x)))
-        x1 = self.dropout(x1)
-        
-        x2 = torch.relu(self.ln2(self.fc2(x1)))
-        x2 = self.dropout(x2)
-        x2 = x2 + x1  # Residual
-        
-        x3 = torch.relu(self.fc3(x2))
-        x3 = x3 + x2  # Residual
-        
-        return self.fc4(x3)
+        return self.network(x)
 
 class RLAgent:
-    """Improved Deep Q-Learning agent"""
+    """Reinforcement Learning agent"""
     
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        self.state_dim = 14  # Enhanced state space
-        self.action_dim = 9  # 8 directions + stay
+        self.state_dim = 10  # [lat, lon, dlat, dlon, dist, angle_cos, angle_sin, u, v, time]
+        self.action_dim = 5  # [stay, N, S, E, W]
         
-        self.policy_net = ImprovedDQN(self.state_dim, self.action_dim).to(self.device)
-        self.target_net = ImprovedDQN(self.state_dim, self.action_dim).to(self.device)
+        self.policy_net = DQN(self.state_dim, self.action_dim).to(self.device)
+        self.target_net = DQN(self.state_dim, self.action_dim).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=Config.LEARNING_RATE)
@@ -382,44 +323,42 @@ class RLAgent:
         
         # Tracking
         self.losses = []
-        self.rewards = []
-        self.errors = []
-        self.epsilon_history = []
+        self.rewards_history = []
+        self.errors_history = []
         
-        print(f"✓ RL Agent on {self.device}")
-        total_params = sum(p.numel() for p in self.policy_net.parameters())
-        print(f"  Network: {total_params:,} parameters")
+        print(f"✓ RL Agent initialized on {self.device}")
     
-    def get_state(self, particle, target_particle, env, time_step):
-        """Enhanced state representation"""
-        vel = env.get_velocity(particle.lat, particle.lon, time_step)
+    def get_state(self, particle, target, env, time_idx):
+        """Get state representation"""
+        # Ensure we have a valid target position
+        if time_idx >= len(target.trajectory):
+            time_idx = len(target.trajectory) - 1
+            
+        target_lat, target_lon = target.trajectory[time_idx]
         
-        # Distance to target
-        dlat = target_particle.lat - particle.lat
-        dlon = target_particle.lon - particle.lon
-        # Wrap longitude difference
-        if abs(dlon) > 180:
-            dlon = dlon - 360 * np.sign(dlon)
+        vel = env.get_velocity(particle.lat, particle.lon, time_idx)
+        
+        dlat = target_lat - particle.lat
+        dlon = target_lon - particle.lon
         dist = np.sqrt(dlat**2 + dlon**2)
         
-        # Direction to target
-        angle = np.arctan2(dlat, dlon)
+        # Avoid division by zero
+        if dist < 1e-6:
+            angle = 0.0
+        else:
+            angle = np.arctan2(dlat, dlon)
         
         state = np.array([
-            particle.lat / 90.0,
-            particle.lon / 180.0,
+            particle.lat / 45.0,  # Normalize
+            particle.lon / 50.0,
             dlat / 10.0,
             dlon / 10.0,
-            dist / 100.0,
+            dist / 30.0,
             np.cos(angle),
             np.sin(angle),
-            vel['u_ocean'],
-            vel['v_ocean'],
-            vel['u_wind'] / 10.0,
-            vel['v_wind'] / 10.0,
-            particle.biofouling,
-            time_step / Config.TOTAL_STEPS,
-            float(vel['is_ocean'])
+            vel['u'],
+            vel['v'],
+            time_idx / max(Config.TOTAL_STEPS, 1)
         ], dtype=np.float32)
         
         return state
@@ -434,25 +373,31 @@ class RLAgent:
             q_values = self.policy_net(state_tensor)
             return q_values.argmax().item()
     
-    def apply_action(self, particle, action, env, time_step):
-        """Apply RL correction to particle"""
-        # Actions: N, NE, E, SE, S, SW, W, NW, Stay
-        action_offsets = [
-            (0.1, 0), (0.07, 0.07), (0, 0.1), (-0.07, 0.07),
-            (-0.1, 0), (-0.07, -0.07), (0, -0.1), (0.07, -0.07),
-            (0, 0)
-        ]
+    def apply_action(self, particle, action):
+        """Apply correction action"""
+        # Actions: stay, N, S, E, W
+        action_map = {
+            0: (0, 0),      # stay
+            1: (0.1, 0),    # N
+            2: (-0.1, 0),   # S
+            3: (0, 0.1),    # E
+            4: (0, -0.1)    # W
+        }
         
-        dlat, dlon = action_offsets[action]
+        dlat, dlon = action_map[action]
         particle.lat += dlat
         particle.lon += dlon
+        
+        # Keep in bounds
+        particle.lat = np.clip(particle.lat, Config.LAT_MIN, Config.LAT_MAX)
+        particle.lon = np.clip(particle.lon, Config.LON_MIN, Config.LON_MAX)
     
     def store_experience(self, state, action, reward, next_state, done):
-        """Store in replay buffer"""
+        """Store experience in replay buffer"""
         self.memory.append((state, action, reward, next_state, done))
     
     def train_step(self):
-        """Training with experience replay"""
+        """Training step with experience replay"""
         if len(self.memory) < Config.BATCH_SIZE:
             return 0.0
         
@@ -473,10 +418,9 @@ class RLAgent:
             next_q = self.target_net(next_states).max(1)[0].unsqueeze(1)
             target_q = rewards + (1 - dones) * Config.GAMMA * next_q
         
-        # Loss
+        # Loss and optimization
         loss = nn.MSELoss()(current_q, target_q)
         
-        # Optimize
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), 1.0)
@@ -493,656 +437,353 @@ class RLAgent:
         self.epsilon = max(Config.EPSILON_END, self.epsilon * Config.EPSILON_DECAY)
 
 # ==================== SIMULATION ====================
-def run_global_simulation():
-    """Main simulation loop"""
-    print("\n" + "🌍" * 35)
+def run_simulation():
+    """Main simulation"""
+    print("\n" + "🌊" * 35)
     print("GLOBAL OCEAN PLASTIC PREDICTION WITH DEEP RL")
-    print("🌍" * 35 + "\n")
-    
-    print(f"{'='*70}")
-    print("CONFIGURATION")
-    print(f"{'='*70}")
-    print(f"Period: {Config.START_DATE.date()} to {Config.END_DATE.date()}")
-    print(f"Duration: {Config.TOTAL_DAYS} days ({Config.TOTAL_STEPS} weeks)")
-    print(f"Timestep: {Config.DT_DAYS} days")
-    print(f"Release points: {Config.N_RELEASE_POINTS}")
-    print(f"Particles per point: {Config.N_PARTICLES}")
-    print(f"Total particles: {Config.N_RELEASE_POINTS * Config.N_PARTICLES}")
-    print(f"{'='*70}\n")
+    print("🌊" * 35 + "\n")
     
     # Initialize environment
-    env = GlobalOceanEnvironment()
+    env = RealOceanEnvironment()
     
-    # Define release points (major pollution sources worldwide)
+    # Release points
     release_points = [
-        # North America
-        (40.7, -74.0, "New York Harbor"),
-        (34.0, -118.2, "Los Angeles Coast"),
-        (37.8, -122.4, "San Francisco Bay"),
-        (29.8, -95.4, "Houston/Gulf Coast"),
-        (25.8, -80.2, "Miami/Florida"),
-        
-        # Central/South America
-        (19.4, -99.1, "Mexico City (via rivers)"),
-        (10.5, -66.9, "Caracas/Caribbean"),
-        (-12.0, -77.0, "Lima Coast"),
-        (-23.5, -46.6, "São Paulo (Santos)"),
-        (-34.6, -58.4, "Buenos Aires"),
-        
-        # Europe
-        (51.5, -0.1, "London/Thames"),
-        (48.9, 2.3, "Paris/Seine"),
-        (41.9, 12.5, "Rome/Mediterranean"),
-        (55.8, 37.6, "Moscow (via Volga)"),
-        (40.4, -3.7, "Madrid/Spain Coast"),
-        
-        # Africa
-        (33.6, -7.6, "Casablanca/Morocco"),
-        (6.5, 3.4, "Lagos/Nigeria"),
-        (-33.9, 18.4, "Cape Town"),
-        (-1.3, 36.8, "Nairobi (via rivers)"),
-        (30.0, 31.2, "Cairo/Nile Delta"),
-        
-        # Middle East
-        (25.3, 51.5, "Doha/Persian Gulf"),
-        (24.5, 54.4, "Abu Dhabi"),
-        
-        # Asia - East
-        (35.7, 139.7, "Tokyo Bay"),
-        (34.7, 135.5, "Osaka Bay"),
-        (37.6, 126.9, "Seoul/Yellow Sea"),
-        (39.9, 116.4, "Beijing (via rivers)"),
-        (31.2, 121.5, "Shanghai"),
-        (22.3, 114.2, "Hong Kong"),
-        (25.0, 121.5, "Taipei"),
-        
-        # Asia - Southeast
-        (14.6, 121.0, "Manila Bay"),
-        (1.3, 103.8, "Singapore"),
-        (-6.2, 106.8, "Jakarta"),
-        (10.8, 106.7, "Ho Chi Minh City"),
-        (13.8, 100.5, "Bangkok/Gulf of Thailand"),
-        (16.9, 96.2, "Yangon/Myanmar"),
-        
-        # Asia - South
-        (19.1, 72.9, "Mumbai"),
-        (13.1, 80.3, "Chennai"),
-        (22.6, 88.4, "Kolkata/Ganges"),
-        (23.0, 72.6, "Ahmedabad (via rivers)"),
-        (24.9, 67.0, "Karachi"),
-        
-        # Oceania
-        (-33.9, 151.2, "Sydney"),
-        (-37.8, 144.9, "Melbourne"),
-        (-27.5, 153.0, "Brisbane"),
-        (-36.8, 174.8, "Auckland"),
-        
-        # Pacific Islands (major pollution convergence zones)
-        (20.0, -155.0, "Hawaii (Great Pacific Patch proximity)"),
-        (30.0, -140.0, "North Pacific Gyre Center"),
-        (-10.0, -120.0, "South Pacific Gyre"),
-        
-        # Atlantic convergence zones
-        (28.0, -40.0, "Sargasso Sea/North Atlantic Gyre"),
-        (-25.0, -35.0, "South Atlantic Gyre"),
-        
-        # Indian Ocean
-        (-20.0, 80.0, "Indian Ocean Gyre"),
+        (40.7, -74.0, "New York"),
+        (38.9, -77.0, "Washington"),
+        (25.8, -80.2, "Miami"),
+        (29.8, -95.4, "Houston"),
+        (42.4, -71.1, "Boston")
     ]
     
     print(f"\n{'='*70}")
-    print(f"RELEASE LOCATIONS ({len(release_points)} MAJOR POLLUTION SOURCES)")
+    print(f"SIMULATION SETUP")
     print(f"{'='*70}")
-    
-    regions = {
-        'North America': [],
-        'Central/South America': [],
-        'Europe': [],
-        'Africa': [],
-        'Middle East': [],
-        'East Asia': [],
-        'Southeast Asia': [],
-        'South Asia': [],
-        'Oceania': [],
-        'Ocean Gyres': []
-    }
-    
-    # Categorize by region
-    for i, (lat, lon, name) in enumerate(release_points):
-        if i < 5:
-            regions['North America'].append((lat, lon, name))
-        elif i < 10:
-            regions['Central/South America'].append((lat, lon, name))
-        elif i < 15:
-            regions['Europe'].append((lat, lon, name))
-        elif i < 20:
-            regions['Africa'].append((lat, lon, name))
-        elif i < 22:
-            regions['Middle East'].append((lat, lon, name))
-        elif i < 29:
-            regions['East Asia'].append((lat, lon, name))
-        elif i < 35:
-            regions['Southeast Asia'].append((lat, lon, name))
-        elif i < 40:
-            regions['South Asia'].append((lat, lon, name))
-        elif i < 44:
-            regions['Oceania'].append((lat, lon, name))
-        else:
-            regions['Ocean Gyres'].append((lat, lon, name))
-    
-    for region, points in regions.items():
-        if points:
-            print(f"\n{region}:")
-            for lat, lon, name in points:
-                print(f"  • {name}: {lat:.1f}°{'N' if lat >= 0 else 'S'}, "
-                      f"{abs(lon):.1f}°{'W' if lon < 0 else 'E'}")
-    
-    print(f"\n{'='*70}")
-    print(f"Total particles: {len(release_points) * Config.N_PARTICLES:,}")
+    print(f"Period: {Config.START_DATE} to {Config.END_DATE}")
+    print(f"Duration: {Config.TOTAL_DAYS} days ({Config.TOTAL_STEPS} timesteps)")
+    print(f"Release points: {len(release_points)}")
+    print(f"Particles per point: {Config.N_PARTICLES}")
+    print(f"Total particles: {len(release_points) * Config.N_PARTICLES}")
     print(f"{'='*70}\n")
     
-    # Generate "ground truth" trajectories
-    print("Generating ground truth plastic trajectories...")
-    print(f"  {len(release_points)} release points × {Config.N_PARTICLES} particles each")
-    print(f"  = {len(release_points) * Config.N_PARTICLES:,} total particles")
-    print(f"  Simulating {Config.TOTAL_STEPS} weeks...")
+    # Generate ground truth trajectories
+    print("Generating ground truth trajectories...")
+    ground_truth = []
     
-    ground_truth_particles = []
-    
-    # Create regions dictionary for later use
-    regions = {
-        'North America': [],
-        'Central/South America': [],
-        'Europe': [],
-        'Africa': [],
-        'Middle East': [],
-        'East Asia': [],
-        'Southeast Asia': [],
-        'South Asia': [],
-        'Oceania': [],
-        'Ocean Gyres': []
-    }
-    
-    for point_idx, (lat, lon, name) in enumerate(release_points):
-        # Categorize
-        if point_idx < 5:
-            region_key = 'North America'
-        elif point_idx < 10:
-            region_key = 'Central/South America'
-        elif point_idx < 15:
-            region_key = 'Europe'
-        elif point_idx < 20:
-            region_key = 'Africa'
-        elif point_idx < 22:
-            region_key = 'Middle East'
-        elif point_idx < 29:
-            region_key = 'East Asia'
-        elif point_idx < 35:
-            region_key = 'Southeast Asia'
-        elif point_idx < 40:
-            region_key = 'South Asia'
-        elif point_idx < 44:
-            region_key = 'Oceania'
-        else:
-            region_key = 'Ocean Gyres'
-        
-        regions[region_key].append((lat, lon, name))
-        
-        for _ in range(Config.N_PARTICLES):
-            # Add small spread
-            p_lat = lat + np.random.randn() * 0.5
-            p_lon = lon + np.random.randn() * 0.5
+    for lat, lon, name in release_points:
+        print(f"  {name}...")
+        for i in range(Config.N_PARTICLES):
+            p_lat = lat + np.random.randn() * 0.2
+            p_lon = lon + np.random.randn() * 0.2
             particle = PlasticParticle(p_lat, p_lon, 0)
             
-            # Simulate
-            for step in range(Config.TOTAL_STEPS):
-                particle.update(env, step)
+            for t in range(Config.TOTAL_STEPS):
+                particle.update(env, t)
             
-            ground_truth_particles.append(particle)
-        
-        if (point_idx + 1) % 10 == 0:
-            print(f"  Processed {point_idx + 1}/{len(release_points)} release points...")
+            ground_truth.append(particle)
     
-    print(f"✓ Generated {len(ground_truth_particles):,} ground truth trajectories")
+    print(f"✓ Generated {len(ground_truth)} trajectories\n")
     
-    # Define release colors for visualization
-    release_colors = {
-        'North America': 'red',
-        'Central/South America': 'orange', 
-        'Europe': 'blue',
-        'Africa': 'green',
-        'Middle East': 'purple',
-        'East Asia': 'magenta',
-        'Southeast Asia': 'cyan',
-        'South Asia': 'yellow',
-        'Oceania': 'pink',
-        'Ocean Gyres': 'white'
-    }
-    
-    # Initialize RL agent
-    agent = RLAgent()
-    
-    # Training
+    # Train RL agent
     print(f"{'='*70}")
-    print("RL TRAINING")
+    print("TRAINING RL AGENT")
     print(f"{'='*70}\n")
     
-    results_by_step = []
+    agent = RLAgent()
     
-    for step in range(Config.TOTAL_STEPS):
-        current_date = Config.START_DATE + timedelta(days=step * Config.DT_DAYS)
+    for episode in range(Config.TOTAL_STEPS):
+        # Sample target particle
+        target = random.choice(ground_truth)
         
-        step_rewards = []
-        step_errors = []
+        # Skip if trajectory is too short
+        if len(target.trajectory) < 2:
+            continue
         
-        # Train on random subset
-        train_particles = random.sample(ground_truth_particles, 
-                                       min(20, len(ground_truth_particles)))
+        # Create RL-controlled particle
+        rl_particle = PlasticParticle(target.trajectory[0][0], target.trajectory[0][1], 0)
         
-        for target_particle in train_particles:
-            # Create RL-controlled particle
-            rl_particle = PlasticParticle(target_particle.trajectory[0][0],
-                                         target_particle.trajectory[0][1], 0)
+        episode_reward = 0
+        episode_errors = []
+        
+        # Simulate with RL control
+        max_steps = min(len(target.trajectory) - 1, Config.TOTAL_STEPS)
+        for t in range(max_steps):
+            # Skip if we've run out of trajectory
+            if t >= len(target.trajectory) - 1:
+                break
+                
+            state = agent.get_state(rl_particle, target, env, t)
+            action = agent.select_action(state)
             
-            # Simulate with RL control
-            episode_reward = 0
-            for t in range(min(step + 1, len(target_particle.trajectory) - 1)):
-                state = agent.get_state(rl_particle, target_particle, env, t)
-                action = agent.select_action(state)
-                
-                # Physics step
-                rl_particle.update(env, t)
-                
-                # Apply RL correction
-                agent.apply_action(rl_particle, action, env, t)
-                
-                # Compute reward
-                target_lat, target_lon, _ = target_particle.trajectory[t + 1]
-                dlon = target_lon - rl_particle.lon
-                if abs(dlon) > 180:
-                    dlon = dlon - 360 * np.sign(dlon)
-                error_km = np.sqrt((target_lat - rl_particle.lat)**2 + dlon**2) * 111
-                reward = -error_km / 100.0  # Normalized
-                
-                next_state = agent.get_state(rl_particle, target_particle, env, t + 1)
-                done = (t == len(target_particle.trajectory) - 2)
-                
-                agent.store_experience(state, action, reward, next_state, done)
-                episode_reward += reward
-                
-                # Train
-                loss = agent.train_step()
-                if loss > 0:
-                    agent.losses.append(loss)
+            # Physics step
+            rl_particle.update(env, t)
             
-            step_rewards.append(episode_reward)
+            # RL correction
+            agent.apply_action(rl_particle, action)
             
-            # Final error
-            target_lat, target_lon, _ = target_particle.trajectory[min(step, len(target_particle.trajectory) - 1)]
-            dlon = target_lon - rl_particle.lon
-            if abs(dlon) > 180:
-                dlon = dlon - 360 * np.sign(dlon)
-            final_error = np.sqrt((target_lat - rl_particle.lat)**2 + dlon**2) * 111
-            step_errors.append(final_error)
+            # Calculate reward
+            target_lat, target_lon = target.trajectory[t + 1]
+            error = np.sqrt((rl_particle.lat - target_lat)**2 + 
+                          (rl_particle.lon - target_lon)**2)
+            reward = -error * 10  # Negative reward for distance
+            
+            episode_reward += reward
+            episode_errors.append(error * 111)  # Convert to km
+            
+            next_state = agent.get_state(rl_particle, target, env, t + 1)
+            done = (t == len(target.trajectory) - 2)
+            
+            agent.store_experience(state, action, reward, next_state, done)
+            
+            # Train
+            loss = agent.train_step()
+            if loss > 0:
+                agent.losses.append(loss)
         
         # Update target network
-        if step % Config.TARGET_UPDATE == 0:
+        if episode % Config.TARGET_UPDATE == 0:
             agent.update_target()
         
         agent.decay_epsilon()
         
-        # Record
-        mean_reward = np.mean(step_rewards)
-        mean_error = np.mean(step_errors)
-        agent.rewards.append(mean_reward)
-        agent.errors.append(mean_error)
-        agent.epsilon_history.append(agent.epsilon)
-        
-        # Store results
-        step_result = {
-            'step': step,
-            'date': current_date.strftime('%Y-%m-%d'),
-            'days_since_start': step * Config.DT_DAYS,
-            'mean_reward': float(mean_reward),
-            'mean_error_km': float(mean_error),
-            'epsilon': float(agent.epsilon),
-            'samples': len(step_rewards)
-        }
-        results_by_step.append(step_result)
+        # Record metrics (handle empty case)
+        if len(episode_errors) > 0:
+            agent.rewards_history.append(episode_reward / len(episode_errors))
+            agent.errors_history.append(np.mean(episode_errors))
+        else:
+            agent.rewards_history.append(0.0)
+            agent.errors_history.append(0.0)
         
         # Progress
-        if step % 10 == 0 or step < 5:
-            print(f"Week {step:3d} | {current_date.date()} | "
-                  f"Reward: {mean_reward:8.2f} | Error: {mean_error:6.1f} km | "
-                  f"ε: {agent.epsilon:.4f}")
+        if episode % 5 == 0 or episode < 3:
+            if len(agent.errors_history) > 0:
+                print(f"Episode {episode:3d} | Reward: {agent.rewards_history[-1]:8.2f} | "
+                      f"Error: {agent.errors_history[-1]:6.1f} km | ε: {agent.epsilon:.3f}")
+            else:
+                print(f"Episode {episode:3d} | Initializing... | ε: {agent.epsilon:.3f}")
     
-    print(f"\n{'='*70}")
-    print("✓ TRAINING COMPLETE")
-    print(f"{'='*70}")
-    print(f"Final error: {agent.errors[-1]:.1f} km")
-    print(f"Best error: {min(agent.errors):.1f} km")
-    print(f"Improvement: {((agent.errors[0] - agent.errors[-1]) / agent.errors[0] * 100):.1f}%")
-    print(f"{'='*70}\n")
+    print(f"\n✓ Training complete!")
     
-    return env, agent, ground_truth_particles, results_by_step, regions, release_colors
+    if len(agent.errors_history) > 0:
+        print(f"  Initial error: {agent.errors_history[0]:.1f} km")
+        print(f"  Final error: {agent.errors_history[-1]:.1f} km")
+        if agent.errors_history[0] > 0:
+            improvement = ((agent.errors_history[0] - agent.errors_history[-1]) / agent.errors_history[0] * 100)
+            print(f"  Improvement: {improvement:.1f}%")
+    else:
+        print("  No training data collected")
+    
+    print()
+    
+    return env, agent, ground_truth, release_points
 
 # ==================== VISUALIZATION ====================
-def create_visualizations(env, agent, ground_truth_particles, results_by_step, regions, release_colors):
-    """Create comprehensive visualizations"""
-    print(f"\n{'='*70}")
+def create_visualizations(env, agent, ground_truth, release_points):
+    """Create all visualizations"""
+    print(f"{'='*70}")
     print("CREATING VISUALIZATIONS")
     print(f"{'='*70}\n")
     
-    # 1. Training Performance Dashboard
+    # Check if we have data
+    if len(agent.errors_history) == 0:
+        print("⚠️  No training data available - skipping visualizations")
+        return
+    
+    # 1. Training Dashboard
     print("📊 Creating training dashboard...")
-    fig = plt.figure(figsize=(20, 12))
-    gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     
-    steps = np.arange(len(agent.errors))
-    dates = [Config.START_DATE + timedelta(days=int(s * Config.DT_DAYS)) for s in steps]
+    episodes = np.arange(len(agent.errors_history))
     
-    # Panel 1: Prediction Error Over Time
-    ax1 = fig.add_subplot(gs[0, :])
-    ax1.plot(dates, agent.errors, 'b-', linewidth=2, label='Prediction Error')
-    z = np.polyfit(steps, agent.errors, 2)
+    # Error over time
+    ax = axes[0, 0]
+    ax.plot(episodes, agent.errors_history, 'b-', linewidth=2, alpha=0.7)
+    z = np.polyfit(episodes, agent.errors_history, 2)
     p = np.poly1d(z)
-    ax1.plot(dates, p(steps), 'r--', linewidth=2, label='Trend', alpha=0.7)
-    ax1.fill_between(dates, 0, agent.errors, alpha=0.2, color='blue')
-    ax1.set_title('RL Learning Progress: Prediction Error Reduction', 
-                  fontsize=16, fontweight='bold', pad=15)
-    ax1.set_xlabel('Date', fontsize=12)
-    ax1.set_ylabel('Mean Error (km)', fontsize=12)
-    ax1.legend(fontsize=11)
-    ax1.grid(True, alpha=0.3)
-    ax1.set_ylim(bottom=0)
+    ax.plot(episodes, p(episodes), 'r--', linewidth=2, label='Trend')
+    ax.fill_between(episodes, agent.errors_history, alpha=0.3)
+    ax.set_title('Prediction Error Over Training', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Episode')
+    ax.set_ylabel('Error (km)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
-    # Panel 2: Cumulative Reward
-    ax2 = fig.add_subplot(gs[1, 0])
-    cumulative_reward = np.cumsum(agent.rewards)
-    ax2.plot(dates, cumulative_reward, 'g-', linewidth=2)
-    ax2.fill_between(dates, cumulative_reward, alpha=0.3, color='green')
-    ax2.set_title('Cumulative Reward', fontweight='bold')
-    ax2.set_xlabel('Date')
-    ax2.set_ylabel('Cumulative Reward')
-    ax2.grid(True, alpha=0.3)
+    # Rewards
+    ax = axes[0, 1]
+    ax.plot(episodes, agent.rewards_history, 'g-', linewidth=2, alpha=0.7)
+    ax.fill_between(episodes, agent.rewards_history, alpha=0.3, color='green')
+    ax.set_title('Average Reward Per Episode', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Episode')
+    ax.set_ylabel('Reward')
+    ax.grid(True, alpha=0.3)
     
-    # Panel 3: Loss Over Training
-    ax3 = fig.add_subplot(gs[1, 1])
-    if agent.losses:
-        loss_smoothed = np.convolve(agent.losses, np.ones(50)/50, mode='valid')
-        ax3.plot(loss_smoothed, 'r-', linewidth=1.5)
-        ax3.set_title('Network Loss (Smoothed)', fontweight='bold')
-        ax3.set_xlabel('Training Iteration')
-        ax3.set_ylabel('MSE Loss')
-        ax3.set_yscale('log')
-        ax3.grid(True, alpha=0.3)
+    # Loss
+    ax = axes[1, 0]
+    if len(agent.losses) > 50:
+        smoothed = np.convolve(agent.losses, np.ones(50)/50, mode='valid')
+        ax.plot(smoothed, 'r-', linewidth=2)
+    ax.set_title('Training Loss (Smoothed)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Training Step')
+    ax.set_ylabel('MSE Loss')
+    ax.set_yscale('log')
+    ax.grid(True, alpha=0.3)
     
-    # Panel 4: Epsilon Decay
-    ax4 = fig.add_subplot(gs[1, 2])
-    ax4.plot(dates, agent.epsilon_history, 'purple', linewidth=2)
-    ax4.fill_between(dates, 0, agent.epsilon_history, alpha=0.3, color='purple')
-    ax4.set_title('Exploration Rate (ε)', fontweight='bold')
-    ax4.set_xlabel('Date')
-    ax4.set_ylabel('Epsilon')
-    ax4.grid(True, alpha=0.3)
-    
-    # Panel 5: Error Distribution
-    ax5 = fig.add_subplot(gs[2, 0])
-    ax5.hist(agent.errors, bins=40, color='blue', alpha=0.7, edgecolor='black')
-    ax5.axvline(np.mean(agent.errors), color='red', linestyle='--', 
-               linewidth=2, label=f'Mean: {np.mean(agent.errors):.1f} km')
-    ax5.axvline(np.median(agent.errors), color='green', linestyle='--', 
-               linewidth=2, label=f'Median: {np.median(agent.errors):.1f} km')
-    ax5.set_title('Error Distribution', fontweight='bold')
-    ax5.set_xlabel('Error (km)')
-    ax5.set_ylabel('Frequency')
-    ax5.legend()
-    ax5.grid(True, alpha=0.3, axis='y')
-    
-    # Panel 6: Learning Rate Comparison
-    ax6 = fig.add_subplot(gs[2, 1])
-    window = 20
-    if len(agent.errors) >= window * 2:
-        early_errors = agent.errors[:window]
-        late_errors = agent.errors[-window:]
-        
-        ax6.violinplot([early_errors, late_errors], positions=[1, 2], 
-                      showmeans=True, showmedians=True)
-        ax6.set_xticks([1, 2])
-        ax6.set_xticklabels(['Early Training', 'Late Training'])
-        ax6.set_ylabel('Error (km)')
-        ax6.set_title('Early vs Late Performance', fontweight='bold')
-        ax6.grid(True, alpha=0.3, axis='y')
-    
-    # Panel 7: Improvement Metrics
-    ax7 = fig.add_subplot(gs[2, 2])
-    ax7.axis('off')
-    
-    improvement = ((agent.errors[0] - agent.errors[-1]) / agent.errors[0] * 100)
-    best_error = min(agent.errors)
-    worst_error = max(agent.errors)
-    
+    # Statistics
+    ax = axes[1, 1]
+    ax.axis('off')
     stats_text = f"""
-LEARNING STATISTICS
-{'='*30}
+TRAINING STATISTICS
+{'='*40}
 
-Initial Error: {agent.errors[0]:.1f} km
-Final Error: {agent.errors[-1]:.1f} km
-Best Error: {best_error:.1f} km
-Worst Error: {worst_error:.1f} km
+Initial Error: {agent.errors_history[0]:.1f} km
+Final Error: {agent.errors_history[-1]:.1f} km
+Best Error: {min(agent.errors_history):.1f} km
 
-Improvement: {improvement:.1f}%
-Mean Error: {np.mean(agent.errors):.1f} km
-Std Dev: {np.std(agent.errors):.1f} km
+Improvement: {((agent.errors_history[0] - agent.errors_history[-1]) / agent.errors_history[0] * 100):.1f}%
 
-Training Steps: {len(agent.errors)}
-Final Epsilon: {agent.epsilon:.4f}
-Network Updates: {len(agent.losses)}
+Mean Error: {np.mean(agent.errors_history):.1f} ± {np.std(agent.errors_history):.1f} km
 
-Convergence: {'✓' if improvement > 30 else '⚠️'}
+Episodes: {len(agent.errors_history)}
+Training Steps: {len(agent.losses)}
     """
+    ax.text(0.1, 0.5, stats_text, fontsize=12, verticalalignment='center',
+            fontfamily='monospace', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
     
-    ax7.text(0.1, 0.5, stats_text, fontsize=11, verticalalignment='center',
-            fontfamily='monospace', bbox=dict(boxstyle='round', 
-            facecolor='lightblue', alpha=0.8))
-    
-    plt.suptitle('Deep RL Training Analysis - Global Ocean Plastic Prediction', 
-                fontsize=18, fontweight='bold', y=0.995)
+    plt.suptitle('Deep RL Training Analysis', fontsize=16, fontweight='bold')
+    plt.tight_layout()
     plt.savefig('rl_training_dashboard.png', dpi=Config.DPI, bbox_inches='tight')
     print("✓ Saved: rl_training_dashboard.png")
     plt.close()
     
-    # 2. Global Map Visualization
-    print("🗺️  Creating global map...")
+    # 2. Trajectory Map
+    print("🗺️  Creating trajectory map...")
+    fig, ax = plt.subplots(figsize=(16, 12))
     
-    fig = plt.figure(figsize=(24, 14))
+    # Plot ocean currents as background
+    time_idx = Config.TOTAL_STEPS // 2
+    speed = np.sqrt(env.u_data[time_idx]**2 + env.v_data[time_idx]**2)
     
-    if HAS_CARTOPY:
-        ax = plt.subplot(1, 1, 1, projection=ccrs.PlateCarree())
-        ax.set_global()
-        ax.add_feature(cfeature.LAND, facecolor='lightgray', edgecolor='black', linewidth=0.5)
-        ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.3)
-        ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
-        ax.add_feature(cfeature.BORDERS, linewidth=0.3, alpha=0.5)
-        gl = ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5, linestyle='--')
-        gl.top_labels = False
-        gl.right_labels = False
-        transform = ccrs.PlateCarree()
-    else:
-        ax = plt.subplot(1, 1, 1)
-        ax.set_xlim(-180, 180)
-        ax.set_ylim(-60, 70)
-        ax.set_facecolor('lightblue')
-        ax.grid(True, alpha=0.3)
-        transform = None
+    LON, LAT = np.meshgrid(env.lons, env.lats)
+    im = ax.contourf(LON, LAT, speed, levels=30, cmap='Blues', alpha=0.5)
     
-    # Plot ocean currents
-    skip = 15
-    speed = np.sqrt(env.u**2 + env.v**2)
-    kwargs = {'transform': transform} if transform else {}
-    
-    im = ax.contourf(env.LON, env.LAT, speed, levels=30, cmap='Blues', 
-                    alpha=0.4, **kwargs)
-    ax.quiver(env.LON[::skip, ::skip], env.LAT[::skip, ::skip],
-             env.u[::skip, ::skip], env.v[::skip, ::skip],
-             alpha=0.3, scale=20, width=0.002, color='darkblue', **kwargs)
+    skip = 3
+    ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip],
+             env.u_data[time_idx, ::skip, ::skip], env.v_data[time_idx, ::skip, ::skip],
+             alpha=0.4, scale=5, width=0.003)
     
     # Plot sample trajectories
-    sample_size = min(100, len(ground_truth_particles))
-    sample_particles = random.sample(ground_truth_particles, sample_size)
-    
-    for particle in sample_particles:
+    sample_size = min(100, len(ground_truth))
+    for particle in random.sample(ground_truth, sample_size):
         traj = np.array(particle.trajectory)
         if len(traj) > 1:
-            # Color by time
-            colors = plt.cm.Reds(np.linspace(0.2, 1, len(traj)))
+            colors = plt.cm.Reds(np.linspace(0.3, 1, len(traj)))
             for i in range(len(traj) - 1):
                 ax.plot(traj[i:i+2, 1], traj[i:i+2, 0], 
-                       color=colors[i], linewidth=0.5, alpha=0.3, **kwargs)
+                       color=colors[i], linewidth=1, alpha=0.5)
     
     # Plot final positions
-    final_lats = [p.trajectory[-1][0] for p in ground_truth_particles if not p.beached]
-    final_lons = [p.trajectory[-1][1] for p in ground_truth_particles if not p.beached]
+    final_lats = [p.trajectory[-1][0] for p in ground_truth if not p.beached]
+    final_lons = [p.trajectory[-1][1] for p in ground_truth if not p.beached]
+    ax.scatter(final_lons, final_lats, c='red', s=30, alpha=0.7, 
+              edgecolors='darkred', linewidths=0.5, label='Final Positions')
     
-    ax.scatter(final_lons, final_lats, c='red', s=20, alpha=0.6,
-              label=f'Final Positions ({Config.END_DATE.year})', **kwargs)
+    # Plot release points
+    for lat, lon, name in release_points:
+        ax.scatter(lon, lat, c='lime', s=300, marker='*', 
+                  edgecolors='black', linewidths=2, zorder=10)
+        ax.annotate(name, (lon, lat), xytext=(5, 5), textcoords='offset points',
+                   fontsize=10, fontweight='bold', color='white',
+                   bbox=dict(boxstyle='round', facecolor='black', alpha=0.7))
     
-    # Plot release points with color coding by region
-    release_colors = {
-        'North America': 'red',
-        'Central/South America': 'orange', 
-        'Europe': 'blue',
-        'Africa': 'green',
-        'Middle East': 'purple',
-        'East Asia': 'magenta',
-        'Southeast Asia': 'cyan',
-        'South Asia': 'yellow',
-        'Oceania': 'pink',
-        'Ocean Gyres': 'white'
-    }
+    ax.set_xlabel('Longitude', fontsize=12)
+    ax.set_ylabel('Latitude', fontsize=12)
+    ax.set_title(f'Ocean Plastic Trajectories\n{len(ground_truth)} particles over {Config.TOTAL_DAYS} days',
+                fontsize=16, fontweight='bold')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
     
-    for region, points in regions.items():
-        if points:
-            lats = [p[0] for p in points]
-            lons = [p[1] for p in points]
-            ax.scatter(lons, lats, c=release_colors[region], s=150, marker='*',
-                      edgecolors='black', linewidths=1.5, zorder=10,
-                      label=f'{region} ({len(points)})', alpha=0.9, **kwargs)
-    
-    # Title and legend
-    total_sources = sum(len(v) for v in regions.values())
-    ax.set_title(f'Global Ocean Plastic Trajectories: 2020-2025\n'
-                f'{len(ground_truth_particles):,} Particles from {total_sources} Sources | '
-                f'{Config.TOTAL_STEPS} Weeks | Deep RL Enhanced',
-                fontsize=18, fontweight='bold', pad=20)
-    ax.legend(loc='lower left', fontsize=9, framealpha=0.95, ncol=2)
-    
-    cbar = plt.colorbar(im, ax=ax, orientation='horizontal', pad=0.05, aspect=50)
-    cbar.set_label('Ocean Current Speed (m/s)', fontsize=13, fontweight='bold')
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('Current Speed (m/s)', fontsize=11)
     
     plt.tight_layout()
-    plt.savefig('global_plastic_map.png', dpi=Config.DPI, bbox_inches='tight')
-    print("✓ Saved: global_plastic_map.png")
+    plt.savefig('trajectory_map.png', dpi=Config.DPI, bbox_inches='tight')
+    print("✓ Saved: trajectory_map.png")
     plt.close()
     
-    # 3. Time Evolution Animation Frames
+    # 3. Animation frames
     print("🎬 Creating animation frames...")
-    
-    # Select time snapshots
-    n_frames = 12
+    n_frames = min(12, Config.TOTAL_STEPS)
     frame_indices = np.linspace(0, Config.TOTAL_STEPS - 1, n_frames, dtype=int)
     
-    fig, axes = plt.subplots(3, 4, figsize=(24, 18))
+    fig, axes = plt.subplots(3, 4, figsize=(20, 15))
     axes = axes.flatten()
     
-    for idx, step in enumerate(frame_indices):
+    for idx, t in enumerate(frame_indices):
         ax = axes[idx]
         
-        current_date = Config.START_DATE + timedelta(days=int(step * Config.DT_DAYS))
+        # Convert numpy int to Python int
+        t = int(t)
         
-        # Background
-        ax.set_xlim(-180, 180)
-        ax.set_ylim(-60, 70)
-        ax.set_facecolor('lightblue')
+        # Background currents
+        speed = np.sqrt(env.u_data[t]**2 + env.v_data[t]**2)
+        ax.contourf(LON, LAT, speed, levels=20, cmap='Blues', alpha=0.4)
         
-        # Currents (reduced detail)
-        skip_anim = 25
-        ax.contourf(env.LON, env.LAT, speed, levels=20, cmap='Blues', alpha=0.3)
-        ax.quiver(env.LON[::skip_anim, ::skip_anim], env.LAT[::skip_anim, ::skip_anim],
-                 env.u[::skip_anim, ::skip_anim], env.v[::skip_anim, ::skip_anim],
-                 alpha=0.2, scale=25, width=0.001)
+        # Particles at this time
+        lats_t = []
+        lons_t = []
+        for particle in ground_truth:
+            if t < len(particle.trajectory):
+                lat, lon = particle.trajectory[t]
+                lats_t.append(lat)
+                lons_t.append(lon)
         
-        # Particles at this timestep
-        lats_at_step = []
-        lons_at_step = []
+        if lats_t:
+            ax.scatter(lons_t, lats_t, c='red', s=20, alpha=0.7)
         
-        for particle in ground_truth_particles:
-            if step < len(particle.trajectory) and not particle.beached:
-                lat, lon, _ = particle.trajectory[step]
-                lats_at_step.append(lat)
-                lons_at_step.append(lon)
+        # Release points
+        for lat, lon, _ in release_points:
+            ax.scatter(lon, lat, c='lime', s=80, marker='*', 
+                      edgecolors='black', linewidths=1, zorder=10)
         
-        if lats_at_step:
-            ax.scatter(lons_at_step, lats_at_step, c='red', s=5, alpha=0.6)
-            
-            # Show trajectories up to this point (sample)
-            for particle in random.sample(ground_truth_particles, min(50, len(ground_truth_particles))):
-                if step < len(particle.trajectory):
-                    traj = np.array(particle.trajectory[:step+1])
-                    if len(traj) > 1:
-                        ax.plot(traj[:, 1], traj[:, 0], 'r-', alpha=0.15, linewidth=0.3)
-        
-        # Release points with color coding
-        for region, points in regions.items():
-            if points:
-                reg_lats = [p[0] for p in points]
-                reg_lons = [p[1] for p in points]
-                ax.scatter(reg_lons, reg_lats, c=release_colors[region], s=50, marker='*',
-                          edgecolors='black', linewidths=0.5, zorder=10, alpha=0.8)
-        
-        ax.set_title(f'{current_date.strftime("%Y-%m-%d")} | Week {step} | '
-                    f'{len(lats_at_step)} Active Particles',
-                    fontsize=11, fontweight='bold')
+        date = Config.START_DATE + timedelta(hours=int(t * Config.DT_HOURS))
+        ax.set_title(f'{date.strftime("%Y-%m-%d %H:%M")} | {len(lats_t)} particles',
+                    fontsize=10, fontweight='bold')
+        ax.set_xlim(Config.LON_MIN, Config.LON_MAX)
+        ax.set_ylim(Config.LAT_MIN, Config.LAT_MAX)
         ax.grid(True, alpha=0.2)
-        ax.set_xlabel('Longitude', fontsize=9)
-        ax.set_ylabel('Latitude', fontsize=9)
     
-    plt.suptitle('Global Plastic Dispersion Over Time (2020-2025)', 
-                fontsize=20, fontweight='bold', y=0.995)
+    plt.suptitle('Plastic Dispersion Over Time', fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('time_evolution_frames.png', dpi=Config.DPI, bbox_inches='tight')
-    print("✓ Saved: time_evolution_frames.png")
+    plt.savefig('time_evolution.png', dpi=Config.DPI, bbox_inches='tight')
+    print("✓ Saved: time_evolution.png")
     plt.close()
     
     # 4. RL vs Physics Comparison
-    print("📊 Creating RL vs Physics comparison...")
+    print("📊 Creating RL comparison...")
     
-    # Run physics-only prediction for comparison
-    print("  Running physics-only baseline...")
-    test_particle = random.choice(ground_truth_particles)
+    # Test on a particle
+    test_particle = random.choice(ground_truth)
     
     # Physics-only
-    physics_particle = PlasticParticle(test_particle.trajectory[0][0],
+    physics_particle = PlasticParticle(test_particle.trajectory[0][0], 
                                       test_particle.trajectory[0][1], 0)
-    for step in range(len(test_particle.trajectory) - 1):
-        physics_particle.update(env, step)
+    max_steps = len(test_particle.trajectory) - 1
+    for t in range(max_steps):
+        physics_particle.update(env, int(t))
     
     # RL-enhanced
     rl_particle = PlasticParticle(test_particle.trajectory[0][0],
                                  test_particle.trajectory[0][1], 0)
-    agent.epsilon = 0  # Greedy for testing
-    for step in range(len(test_particle.trajectory) - 1):
-        state = agent.get_state(rl_particle, test_particle, env, step)
+    agent.epsilon = 0  # Greedy
+    for t in range(max_steps):
+        state = agent.get_state(rl_particle, test_particle, env, int(t))
         action = agent.select_action(state)
-        rl_particle.update(env, step)
-        agent.apply_action(rl_particle, action, env, step)
+        rl_particle.update(env, int(t))
+        agent.apply_action(rl_particle, action)
     
-    # Compare
-    fig = plt.figure(figsize=(20, 10))
+    # Plot comparison
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
     
-    ax1 = plt.subplot(1, 2, 1)
-    
-    # Plot trajectories
+    # Trajectories
     target_traj = np.array(test_particle.trajectory)
     physics_traj = np.array(physics_particle.trajectory)
     rl_traj = np.array(rl_particle.trajectory)
@@ -1154,168 +795,145 @@ Convergence: {'✓' if improvement > 30 else '⚠️'}
     ax1.plot(rl_traj[:, 1], rl_traj[:, 0], 'r-', linewidth=2, 
             label='RL Enhanced', alpha=0.7)
     
-    ax1.scatter(target_traj[0, 1], target_traj[0, 0], c='lime', s=300, 
+    ax1.scatter(target_traj[0, 1], target_traj[0, 0], c='lime', s=200, 
                marker='*', edgecolors='black', zorder=10, label='Start')
-    ax1.scatter(target_traj[-1, 1], target_traj[-1, 0], c='green', s=200, 
-               marker='s', edgecolors='black', zorder=10, label='Target End')
-    ax1.scatter(physics_traj[-1, 1], physics_traj[-1, 0], c='blue', s=200, 
-               marker='o', edgecolors='black', zorder=10, label='Physics End')
-    ax1.scatter(rl_traj[-1, 1], rl_traj[-1, 0], c='red', s=200, 
-               marker='D', edgecolors='black', zorder=10, label='RL End')
+    ax1.scatter(target_traj[-1, 1], target_traj[-1, 0], c='green', s=150, 
+               marker='s', edgecolors='black', zorder=10)
+    ax1.scatter(physics_traj[-1, 1], physics_traj[-1, 0], c='blue', s=150, 
+               marker='o', edgecolors='black', zorder=10)
+    ax1.scatter(rl_traj[-1, 1], rl_traj[-1, 0], c='red', s=150, 
+               marker='D', edgecolors='black', zorder=10)
     
     ax1.set_xlabel('Longitude', fontsize=12)
     ax1.set_ylabel('Latitude', fontsize=12)
     ax1.set_title('Trajectory Comparison', fontsize=14, fontweight='bold')
-    ax1.legend(fontsize=11)
+    ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
     
-    # Error over time
-    ax2 = plt.subplot(1, 2, 2)
-    
+    # Errors over time
     physics_errors = []
     rl_errors = []
     
     for i in range(min(len(target_traj), len(physics_traj), len(rl_traj))):
-        # Physics error
-        dlon = target_traj[i, 1] - physics_traj[i, 1]
-        if abs(dlon) > 180:
-            dlon = dlon - 360 * np.sign(dlon)
-        physics_err = np.sqrt((target_traj[i, 0] - physics_traj[i, 0])**2 + dlon**2) * 111
+        physics_err = np.sqrt((target_traj[i, 0] - physics_traj[i, 0])**2 + 
+                             (target_traj[i, 1] - physics_traj[i, 1])**2) * 111
+        rl_err = np.sqrt((target_traj[i, 0] - rl_traj[i, 0])**2 + 
+                        (target_traj[i, 1] - rl_traj[i, 1])**2) * 111
         physics_errors.append(physics_err)
-        
-        # RL error
-        dlon = target_traj[i, 1] - rl_traj[i, 1]
-        if abs(dlon) > 180:
-            dlon = dlon - 360 * np.sign(dlon)
-        rl_err = np.sqrt((target_traj[i, 0] - rl_traj[i, 0])**2 + dlon**2) * 111
         rl_errors.append(rl_err)
     
-    weeks = np.arange(len(physics_errors))
-    ax2.plot(weeks, physics_errors, 'b-', linewidth=2, label='Physics Only', alpha=0.7)
-    ax2.plot(weeks, rl_errors, 'r-', linewidth=2, label='RL Enhanced', alpha=0.7)
-    ax2.fill_between(weeks, physics_errors, alpha=0.2, color='blue')
-    ax2.fill_between(weeks, rl_errors, alpha=0.2, color='red')
+    steps = np.arange(len(physics_errors))
+    ax2.plot(steps, physics_errors, 'b-', linewidth=2, label='Physics Only', alpha=0.7)
+    ax2.plot(steps, rl_errors, 'r-', linewidth=2, label='RL Enhanced', alpha=0.7)
+    ax2.fill_between(steps, physics_errors, alpha=0.2, color='blue')
+    ax2.fill_between(steps, rl_errors, alpha=0.2, color='red')
     
-    ax2.set_xlabel('Week', fontsize=12)
-    ax2.set_ylabel('Prediction Error (km)', fontsize=12)
-    ax2.set_title('Error Evolution Over Time', fontsize=14, fontweight='bold')
-    ax2.legend(fontsize=11)
+    ax2.set_xlabel('Timestep', fontsize=12)
+    ax2.set_ylabel('Error (km)', fontsize=12)
+    ax2.set_title('Prediction Error Over Time', fontsize=14, fontweight='bold')
+    ax2.legend(fontsize=10)
     ax2.grid(True, alpha=0.3)
     
-    # Add improvement text
-    final_physics_error = physics_errors[-1]
-    final_rl_error = rl_errors[-1]
-    improvement = ((final_physics_error - final_rl_error) / final_physics_error * 100)
-    
-    ax2.text(0.05, 0.95, f'Final Errors:\nPhysics: {final_physics_error:.1f} km\n'
-            f'RL: {final_rl_error:.1f} km\nImprovement: {improvement:.1f}%',
+    improvement = ((physics_errors[-1] - rl_errors[-1]) / physics_errors[-1] * 100)
+    ax2.text(0.05, 0.95, f'Final Errors:\nPhysics: {physics_errors[-1]:.1f} km\n'
+            f'RL: {rl_errors[-1]:.1f} km\nImprovement: {improvement:.1f}%',
             transform=ax2.transAxes, fontsize=11, verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
-    plt.suptitle('RL vs Physics-Only Comparison', fontsize=16, fontweight='bold')
+    plt.suptitle('RL vs Physics-Only Prediction', fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('rl_vs_physics_comparison.png', dpi=Config.DPI, bbox_inches='tight')
-    print("✓ Saved: rl_vs_physics_comparison.png")
+    plt.savefig('rl_vs_physics.png', dpi=Config.DPI, bbox_inches='tight')
+    print("✓ Saved: rl_vs_physics.png")
     plt.close()
     
-    print(f"\n✓ All visualizations complete!")
+    print("\n✓ All visualizations complete!")
 
-# ==================== ANIMATION ====================
-def create_animated_gif(env, ground_truth_particles, regions, release_colors):
-    """Create animated GIF of plastic movement"""
+# ==================== ANIMATION GIF ====================
+def create_animation_gif(env, ground_truth, release_points):
+    """Create animated GIF"""
     if not HAS_PIL:
-        print("⚠️  Skipping GIF creation (PIL not installed)")
+        print("⚠️  Skipping GIF (PIL not available)")
         return
     
-    print("\n🎬 Creating animated GIF...")
-    print("  This may take a few minutes...")
+    print("\n🎬 Creating animation GIF...")
     
-    # Create frames
-    n_frames = 60  # 5 years, ~1 month per frame
+    n_frames = 30
     frame_indices = np.linspace(0, Config.TOTAL_STEPS - 1, n_frames, dtype=int)
     
     images = []
     
-    for frame_idx, step in enumerate(frame_indices):
-        fig, ax = plt.subplots(figsize=(16, 10))
+    for idx, t in enumerate(frame_indices):
+        # Convert numpy int to Python int
+        t = int(t)
         
-        current_date = Config.START_DATE + timedelta(days=int(step * Config.DT_DAYS))
+        fig, ax = plt.subplots(figsize=(14, 10))
         
         # Background
-        ax.set_xlim(-180, 180)
-        ax.set_ylim(-60, 70)
-        ax.set_facecolor('#0a1929')
+        speed = np.sqrt(env.u_data[t]**2 + env.v_data[t]**2)
+        LON, LAT = np.meshgrid(env.lons, env.lats)
         
-        # Ocean currents
-        speed = np.sqrt(env.u**2 + env.v**2)
-        skip = 20
-        ax.contourf(env.LON, env.LAT, speed, levels=25, cmap='Blues', alpha=0.4)
-        ax.quiver(env.LON[::skip, ::skip], env.LAT[::skip, ::skip],
-                 env.u[::skip, ::skip], env.v[::skip, ::skip],
-                 alpha=0.3, scale=20, width=0.002, color='lightblue')
+        ax.contourf(LON, LAT, speed, levels=25, cmap='Blues', alpha=0.5)
+        skip = 4
+        ax.quiver(LON[::skip, ::skip], LAT[::skip, ::skip],
+                 env.u_data[t, ::skip, ::skip], env.v_data[t, ::skip, ::skip],
+                 alpha=0.4, scale=5, width=0.003)
         
         # Particles
-        lats = []
-        lons = []
-        for particle in ground_truth_particles:
-            if step < len(particle.trajectory) and not particle.beached:
-                lat, lon, _ = particle.trajectory[step]
-                lats.append(lat)
-                lons.append(lon)
+        lats_t = []
+        lons_t = []
+        for particle in ground_truth:
+            if t < len(particle.trajectory):
+                lat, lon = particle.trajectory[t]
+                lats_t.append(lat)
+                lons_t.append(lon)
         
-        if lats:
-            ax.scatter(lons, lats, c='red', s=15, alpha=0.7, edgecolors='yellow', linewidths=0.3)
+        if lats_t:
+            ax.scatter(lons_t, lats_t, c='red', s=25, alpha=0.7, 
+                      edgecolors='darkred', linewidths=0.5)
+            
+            # Show trails for some particles
+            for particle in random.sample(ground_truth, min(20, len(ground_truth))):
+                if t < len(particle.trajectory):
+                    traj = np.array(particle.trajectory[:t+1])
+                    if len(traj) > 1:
+                        ax.plot(traj[:, 1], traj[:, 0], 'r-', alpha=0.2, linewidth=0.8)
         
-        # Release points (color-coded by region)
-        for region, points in regions.items():
-            if points:
-                reg_lats = [p[0] for p in points]
-                reg_lons = [p[1] for p in points]
-                ax.scatter(reg_lons, reg_lats, c=release_colors[region], s=40, 
-                          marker='*', edgecolors='black', linewidths=0.8, 
-                          zorder=10, alpha=0.9)
+        # Release points
+        for lat, lon, name in release_points:
+            ax.scatter(lon, lat, c='lime', s=200, marker='*', 
+                      edgecolors='black', linewidths=1.5, zorder=10)
         
-        # Title
-        ax.set_title(f'Global Ocean Plastic Dispersion | {current_date.strftime("%B %Y")}\n'
-                    f'{len(lats)} Active Particles',
-                    fontsize=16, fontweight='bold', color='white', pad=15)
-        ax.set_xlabel('Longitude', fontsize=12, color='white')
-        ax.set_ylabel('Latitude', fontsize=12, color='white')
-        ax.tick_params(colors='white')
-        ax.grid(True, alpha=0.2, color='white')
-        
-        # Progress bar
-        progress = step / Config.TOTAL_STEPS
-        bar_width = 0.8
-        bar_x = -180 + 10
-        bar_y = -55
-        ax.add_patch(Rectangle((bar_x, bar_y), bar_width * 360, 3, 
-                               facecolor='gray', alpha=0.3))
-        ax.add_patch(Rectangle((bar_x, bar_y), bar_width * 360 * progress, 3, 
-                               facecolor='lime', alpha=0.7))
+        date = Config.START_DATE + timedelta(hours=int(t * Config.DT_HOURS))
+        ax.set_title(f'Ocean Plastic Dispersion | {date.strftime("%Y-%m-%d %H:%M")}\n'
+                    f'{len(lats_t)} active particles',
+                    fontsize=14, fontweight='bold')
+        ax.set_xlabel('Longitude', fontsize=11)
+        ax.set_ylabel('Latitude', fontsize=11)
+        ax.set_xlim(Config.LON_MIN, Config.LON_MAX)
+        ax.set_ylim(Config.LAT_MIN, Config.LAT_MAX)
+        ax.grid(True, alpha=0.3)
         
         plt.tight_layout()
         
         # Save frame
-        filename = f'frame_{frame_idx:03d}.png'
-        plt.savefig(filename, dpi=100, bbox_inches='tight', facecolor='#0a1929')
+        filename = f'frame_{idx:03d}.png'
+        plt.savefig(filename, dpi=80, bbox_inches='tight')
         plt.close()
         
-        # Load frame
         images.append(Image.open(filename))
         
-        if (frame_idx + 1) % 10 == 0:
-            print(f"  Frame {frame_idx + 1}/{n_frames}")
+        if (idx + 1) % 5 == 0:
+            print(f"  Frame {idx + 1}/{n_frames}")
     
     # Create GIF
     print("  Compiling GIF...")
-    images[0].save('plastic_movement_animation.gif',
+    images[0].save('plastic_animation.gif',
                   save_all=True,
                   append_images=images[1:],
-                  duration=100,
+                  duration=200,
                   loop=0)
     
-    # Cleanup frame files
+    # Cleanup
     import os
     for i in range(n_frames):
         try:
@@ -1323,95 +941,75 @@ def create_animated_gif(env, ground_truth_particles, regions, release_colors):
         except:
             pass
     
-    print("✓ Saved: plastic_movement_animation.gif")
+    print("✓ Saved: plastic_animation.gif")
 
 # ==================== JSON EXPORT ====================
-def export_results_json(results_by_step, agent, ground_truth_particles, regions):
-    """Export detailed results to JSON"""
-    print("\n📁 Exporting results to JSON...")
+def export_json(agent, ground_truth):
+    """Export results to JSON"""
+    print("\n📁 Exporting results...")
     
-    # Prepare data
     output = {
         'metadata': {
-            'simulation_name': 'Global Ocean Plastic RL Prediction',
-            'start_date': Config.START_DATE.strftime('%Y-%m-%d'),
-            'end_date': Config.END_DATE.strftime('%Y-%m-%d'),
+            'start_date': Config.START_DATE.strftime('%Y-%m-%d %H:%M'),
+            'end_date': Config.END_DATE.strftime('%Y-%m-%d %H:%M'),
             'total_days': Config.TOTAL_DAYS,
-            'total_steps': Config.TOTAL_STEPS,
-            'timestep_days': Config.DT_DAYS,
-            'n_particles': len(ground_truth_particles),
-            'n_release_points': len(regions),
-            'regions': {k: len(v) for k, v in regions.items()},
-            'rl_config': {
-                'hidden_size': Config.RL_HIDDEN,
-                'layers': Config.RL_LAYERS,
-                'learning_rate': Config.LEARNING_RATE,
-                'batch_size': Config.BATCH_SIZE,
-                'gamma': Config.GAMMA
-            }
+            'timesteps': Config.TOTAL_STEPS,
+            'n_particles': len(ground_truth)
         },
-        'learning_summary': {
-            'initial_error_km': float(agent.errors[0]),
-            'final_error_km': float(agent.errors[-1]),
-            'best_error_km': float(min(agent.errors)),
-            'mean_error_km': float(np.mean(agent.errors)),
-            'std_error_km': float(np.std(agent.errors)),
-            'improvement_percent': float((agent.errors[0] - agent.errors[-1]) / agent.errors[0] * 100),
-            'total_training_steps': len(agent.errors),
-            'network_updates': len(agent.losses)
+        'training': {
+            'initial_error_km': float(agent.errors_history[0]),
+            'final_error_km': float(agent.errors_history[-1]),
+            'best_error_km': float(min(agent.errors_history)),
+            'mean_error_km': float(np.mean(agent.errors_history)),
+            'improvement_percent': float((agent.errors_history[0] - agent.errors_history[-1]) / 
+                                        agent.errors_history[0] * 100),
+            'episodes': len(agent.errors_history)
         },
-        'weekly_results': results_by_step
+        'errors_by_episode': [float(e) for e in agent.errors_history],
+        'rewards_by_episode': [float(r) for r in agent.rewards_history]
     }
     
-    with open('global_plastic_results.json', 'w') as f:
+    with open('results.json', 'w') as f:
         json.dump(output, f, indent=2)
     
-    print("✓ Saved: global_plastic_results.json")
-    print(f"  Contains {len(results_by_step)} weekly datapoints")
+    print("✓ Saved: results.json")
 
 # ==================== MAIN ====================
 if __name__ == "__main__":
     print("\n" + "🌊" * 35)
-    print("GLOBAL OCEAN PLASTIC PREDICTION - DEEP RL SYSTEM")
+    print("OCEAN PLASTIC PREDICTION - DEEP RL")
     print("Oceans Four - DriftCast Team")
     print("🌊" * 35)
     
     # Run simulation
-    env, agent, ground_truth_particles, results_by_step, regions, release_colors = run_global_simulation()
+    env, agent, ground_truth, release_points = run_simulation()
     
     # Create visualizations
-    create_visualizations(env, agent, ground_truth_particles, results_by_step, regions, release_colors)
+    create_visualizations(env, agent, ground_truth, release_points)
     
-    # Create animated GIF
-    create_animated_gif(env, ground_truth_particles, regions, release_colors)
+    # Create animation
+    create_animation_gif(env, ground_truth, release_points)
     
-    # Export JSON
-    export_results_json(results_by_step, agent, ground_truth_particles, regions)
+    # Export results
+    export_json(agent, ground_truth)
     
     print("\n" + "🎉" * 35)
-    print("COMPLETE - ALL FILES GENERATED")
+    print("COMPLETE!")
     print("🎉" * 35)
     
     print("\n📁 Generated Files:")
-    print("   1. rl_training_dashboard.png - Comprehensive RL training analysis")
-    print("   2. global_plastic_map.png - Global trajectory map")
-    print("   3. time_evolution_frames.png - 12 time snapshots")
-    print("   4. rl_vs_physics_comparison.png - Method comparison")
-    print("   5. plastic_movement_animation.gif - Animated movement (60 frames)")
-    print("   6. global_plastic_results.json - Detailed results data")
+    print("   1. rl_training_dashboard.png - Training metrics")
+    print("   2. trajectory_map.png - All particle trajectories")
+    print("   3. time_evolution.png - 12 time snapshots")
+    print("   4. rl_vs_physics.png - Method comparison")
+    print("   5. plastic_animation.gif - Animated dispersion")
+    print("   6. results.json - Numerical results")
     
     print(f"\n{'='*70}")
-    print("KEY METRICS")
+    print("KEY RESULTS")
     print(f"{'='*70}")
-    print(f"Simulation Period: {Config.TOTAL_DAYS} days ({Config.TOTAL_STEPS} weeks)")
-    print(f"Initial Error: {agent.errors[0]:.1f} km")
-    print(f"Final Error: {agent.errors[-1]:.1f} km")
-    print(f"Best Error: {min(agent.errors):.1f} km")
-    print(f"Improvement: {((agent.errors[0] - agent.errors[-1]) / agent.errors[0] * 100):.1f}%")
-    print(f"Mean Error: {np.mean(agent.errors):.1f} ± {np.std(agent.errors):.1f} km")
+    print(f"Initial Error: {agent.errors_history[0]:.1f} km")
+    print(f"Final Error: {agent.errors_history[-1]:.1f} km")
+    print(f"Best Error: {min(agent.errors_history):.1f} km")
+    print(f"Improvement: {((agent.errors_history[0] - agent.errors_history[-1]) / agent.errors_history[0] * 100):.1f}%")
     print(f"{'='*70}\n")
-    
-    print("🌊 Ready for presentation and analysis!")
-    print("   Check the JSON file for detailed week-by-week results")
-    print("   View the GIF to see plastic movement over 5 years")
-    print("   Use the dashboard to show RL learning progress\n")
