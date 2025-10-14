@@ -105,8 +105,9 @@ class SimulationWorker {
             
             console.log(`Calling Python RL simulation: ${pythonScript}`);
             
-            // Spawn Python process
-            const pythonProcess = spawn('python3', [pythonScript, taskDataJson], {
+            // Spawn Python process using the virtual environment
+            const pythonPath = '/Users/lalith/Documents/GitHub/oceans-four-driftcast/AI/igoel/venv/bin/python';
+            const pythonProcess = spawn(pythonPath, [pythonScript, taskDataJson], {
                 stdio: ['pipe', 'pipe', 'pipe']
             });
             

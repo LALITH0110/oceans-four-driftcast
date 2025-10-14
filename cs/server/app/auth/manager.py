@@ -5,6 +5,8 @@ import jwt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from passlib.context import CryptContext
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config.settings import settings
 import logging
 
@@ -12,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# HTTP Bearer token security
+security = HTTPBearer()
 
 class AuthManager:
     def __init__(self):
@@ -70,3 +75,23 @@ class AuthManager:
 
 # Global auth manager instance
 auth_manager = AuthManager()
+
+# FastAPI dependency function
+async def verify_client_token_dependency(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """FastAPI dependency to verify client token from Authorization header"""
+    try:
+        client_id = auth_manager.verify_client_token(credentials.credentials)
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return client_id
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

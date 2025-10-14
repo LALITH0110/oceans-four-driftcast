@@ -9,7 +9,7 @@ import uvicorn
 
 from app.config.settings import settings
 from app.config.database import init_database, close_database
-from app.api.routes import clients, tasks, forecasts, admin
+from app.api.routes import clients, tasks, forecasts, admin, simulations
 from app.scheduler.task_manager import task_scheduler
 from app.monitoring.metrics import setup_metrics
 from app.websocket.connection_manager import connection_manager
@@ -33,6 +33,29 @@ async def lifespan(app: FastAPI):
         
         # Start task scheduler
         await task_scheduler.start()
+        
+        # Create a default test batch for development
+        try:
+            batch_id = await task_scheduler.create_simulation_batch(
+                name="Default Test Batch",
+                particle_count=5,
+                time_horizon=2,
+                spatial_bounds={
+                    "min_lat": 25.0,
+                    "max_lat": 30.0,
+                    "min_lon": -95.0,
+                    "max_lon": -85.0
+                },
+                parameters={
+                    "current_strength": 0.5,
+                    "wind_speed": 10.0,
+                    "priority": 1,
+                    "auto_created": True
+                }
+            )
+            logger.info(f"Created default test batch: {batch_id}")
+        except Exception as e:
+            logger.warning(f"Could not create default test batch: {e}")
         
         # Setup metrics
         setup_metrics()
@@ -73,6 +96,7 @@ app.include_router(clients.router, prefix="/api/v1/clients", tags=["clients"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
 app.include_router(forecasts.router, prefix="/api/v1/forecasts", tags=["forecasts"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
+app.include_router(simulations.router, prefix="/api/v1/simulations", tags=["simulations"])
 
 @app.get("/")
 async def root():
@@ -98,6 +122,30 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for real-time client communication"""
     await connection_manager.connect(websocket, client_id)
     
+    # Look up the real registered client from database
+    from app.models.database import Client
+    from app.config.database import get_async_session
+    from sqlalchemy import select
+    from datetime import datetime
+    
+    # Get the real client from database
+    async for session in get_async_session():
+        result = await session.execute(
+            select(Client).where(Client.id == client_id)
+        )
+        real_client = result.scalar_one_or_none()
+        break
+    
+    if not real_client:
+        logger.error(f"Client {client_id} not found in database")
+        await websocket.close(code=4004, reason="Client not registered")
+        return
+    
+    # Update last seen and register with task scheduler
+    real_client.last_seen = datetime.utcnow()
+    await task_scheduler.register_client(real_client)
+    logger.info(f"Registered real client {real_client.name} ({client_id}) with task scheduler")
+    
     try:
         while True:
             # Receive messages from client
@@ -114,13 +162,16 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             
             elif message_type == "task_request":
                 # Client requesting new task
+                logger.info(f"Received task_request from client {client_id}")
                 task_data = await task_scheduler.assign_task(client_id)
                 if task_data:
+                    logger.info(f"Assigned task {task_data['task_id']} to client {client_id}")
                     await connection_manager.send_personal_message(
                         {"type": "task_assignment", "task": task_data},
                         client_id
                     )
                 else:
+                    logger.info(f"No tasks available for client {client_id}")
                     await connection_manager.send_personal_message(
                         {"type": "no_tasks_available"},
                         client_id

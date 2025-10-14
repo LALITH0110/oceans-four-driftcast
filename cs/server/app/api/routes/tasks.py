@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.config.database import get_async_session
 from app.models.database import Task, TaskResult
-from app.auth.manager import auth_manager
+from app.auth.manager import auth_manager, verify_client_token_dependency
 from app.scheduler.task_manager import task_scheduler
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class TaskFailure(BaseModel):
 
 @router.get("/available")
 async def get_available_task(
-    client_id: str = Depends(auth_manager.verify_client_token),
+    client_id: str = Depends(verify_client_token_dependency),
     session: AsyncSession = Depends(get_async_session)
 ) -> Optional[TaskResponse]:
     """Get an available task for the client"""
@@ -249,4 +249,56 @@ async def get_queue_status():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get queue status"
+        )
+
+@router.get("/results")
+async def get_task_results(
+    limit: int = 10,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get recent task results"""
+    try:
+        result = await session.execute(
+            select(TaskResult, Task, Client)
+            .join(Task, TaskResult.task_id == Task.id)
+            .join(Client, TaskResult.client_id == Client.id)
+            .order_by(TaskResult.created_at.desc())
+            .limit(limit)
+        )
+        
+        results = []
+        for task_result, task, client in result:
+            # Decode result data from bytes
+            try:
+                import json
+                result_json = json.loads(task_result.result_data.decode('utf-8'))
+            except:
+                result_json = {"error": "Could not decode result data"}
+            
+            results.append({
+                "result_id": str(task_result.id),
+                "task_id": str(task_result.task_id),
+                "client_name": client.name,
+                "client_id": str(task_result.client_id),
+                "execution_time": task_result.execution_time,
+                "quality_score": task_result.quality_score,
+                "created_at": task_result.created_at,
+                "task_status": task.status,
+                "result_data": result_json,
+                "particle_count": result_json.get("particle_count", 0),
+                "user_id": result_json.get("user_id", "unknown"),
+                "simulation_type": result_json.get("metadata", {}).get("simulation_type", "unknown")
+            })
+        
+        return {
+            "results": results,
+            "total_count": len(results),
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting task results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get task results"
         )

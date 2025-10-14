@@ -173,7 +173,7 @@ class OceanForecastApp {
         // Handle settings
         ipcMain.handle('get-settings', () => {
             return {
-                serverUrl: store.get('serverUrl', 'http://system80.rice.iit.edu:8000'),
+                serverUrl: store.get('serverUrl', 'http://localhost:8000'),
                 maxCpuUsage: store.get('maxCpuUsage', 50),
                 maxMemoryUsage: store.get('maxMemoryUsage', 1024),
                 autoStart: store.get('autoStart', false),

@@ -43,6 +43,11 @@ class BatchCreationRequest(BaseModel):
     spatial_bounds: Dict[str, Any]
     parameters: Dict[str, Any] = {}
 
+class TaskConfigRequest(BaseModel):
+    target_pending_tasks: int = None
+    min_pending_tasks: int = None
+    max_tasks_per_client: int = None
+
 @router.get("/stats", response_model=SystemStats)
 async def get_system_stats(
     session: AsyncSession = Depends(get_async_session)
@@ -228,6 +233,57 @@ async def list_simulation_batches(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list simulation batches"
+        )
+
+@router.post("/tasks/clear-stuck")
+async def clear_stuck_tasks():
+    """Clear all stuck tasks and return them to queue (for debugging)"""
+    try:
+        cleared_count = await task_scheduler.clear_stuck_tasks()
+        
+        return {
+            "status": "success",
+            "message": f"Cleared {cleared_count} stuck tasks",
+            "cleared_count": cleared_count,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error clearing stuck tasks: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to clear stuck tasks"
+        )
+
+@router.post("/tasks/config")
+async def update_task_config(request: TaskConfigRequest):
+    """Update task management configuration"""
+    try:
+        task_scheduler.update_task_config(
+            target_pending=request.target_pending_tasks,
+            min_pending=request.min_pending_tasks,
+            max_per_client=request.max_tasks_per_client
+        )
+        
+        # Get updated status
+        queue_status = await task_scheduler.get_queue_status()
+        
+        return {
+            "status": "updated",
+            "message": "Task configuration updated successfully",
+            "current_config": {
+                "target_pending_tasks": queue_status["target_pending_tasks"],
+                "min_pending_tasks": queue_status["min_pending_tasks"],
+                "max_tasks_per_client": queue_status["max_tasks_per_client"]
+            },
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error updating task config: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update task configuration"
         )
 
 @router.get("/health")

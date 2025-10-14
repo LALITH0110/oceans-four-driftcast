@@ -60,6 +60,11 @@ class TaskScheduler:
         self.load_balancer = LoadBalancer()
         self.active_tasks: Dict[str, WorkUnit] = {}
         
+        # Task management configuration
+        self.target_pending_tasks = 10  # Target number of pending tasks
+        self.min_pending_tasks = 5     # Minimum before creating new batch
+        self.max_tasks_per_client = 5  # Maximum concurrent tasks per client
+        
     async def start(self):
         """Start the task scheduler service"""
         logger.info("Starting task scheduler...")
@@ -86,7 +91,21 @@ class TaskScheduler:
         try:
             if client_id in self.client_pool:
                 client = self.client_pool.pop(client_id)
-                logger.info(f"Client {client.name} unregistered")
+                
+                # Return any active tasks back to the queue
+                tasks_to_requeue = []
+                for task_id, work_unit in list(self.active_tasks.items()):
+                    if work_unit.assigned_client == client_id:
+                        tasks_to_requeue.append(task_id)
+                
+                for task_id in tasks_to_requeue:
+                    work_unit = self.active_tasks.pop(task_id)
+                    work_unit.assigned_client = None
+                    work_unit.assigned_at = None
+                    await self.work_queue.put(work_unit)
+                    logger.info(f"Requeued task {task_id} from disconnected client {client_id}")
+                
+                logger.info(f"Client {client.name} unregistered, requeued {len(tasks_to_requeue)} tasks")
                 return True
             return False
         except Exception as e:
@@ -104,8 +123,8 @@ class TaskScheduler:
             batch_id = str(uuid.uuid4())
             
             # Calculate number of tasks needed
-            particles_per_task = 1000  # Configurable
-            total_tasks = max(1, particle_count // particles_per_task)
+            particles_per_task = 10  # Smaller for testing, configurable
+            total_tasks = max(1, (particle_count + particles_per_task - 1) // particles_per_task)  # Ceiling division
             
             # Create simulation batch record
             batch = SimulationBatch(
@@ -122,10 +141,14 @@ class TaskScheduler:
             
             # Generate individual work units
             for i in range(total_tasks):
+                # Calculate particles for this task
+                remaining_particles = particle_count - (i * particles_per_task)
+                task_particles = min(particles_per_task, remaining_particles)
+                
                 work_unit = WorkUnit(
                     id=str(uuid.uuid4()),
                     simulation_id=batch_id,
-                    particle_count=particles_per_task,
+                    particle_count=task_particles,
                     parameters=parameters,
                     input_data=b"",  # Will be populated with ocean data
                     priority=parameters.get('priority', 0),
@@ -133,7 +156,7 @@ class TaskScheduler:
                 )
                 
                 await self.work_queue.put(work_unit)
-                self.active_tasks[work_unit.id] = work_unit
+                # Note: Don't add to active_tasks here - only add when assigned to client
             
             logger.info(f"Created simulation batch {name} with {total_tasks} tasks")
             return batch_id
@@ -145,24 +168,33 @@ class TaskScheduler:
     async def assign_task(self, client_id: str) -> Optional[Dict[str, Any]]:
         """Assign a task to a specific client"""
         try:
+            logger.info(f"Attempting to assign task to client {client_id}")
+            
             if client_id not in self.client_pool:
-                logger.warning(f"Client {client_id} not found in pool")
+                logger.warning(f"Client {client_id} not found in pool. Available clients: {list(self.client_pool.keys())}")
                 return None
             
             client = self.client_pool[client_id]
             
             # Check if client can handle more tasks
             client_task_count = await self._get_client_active_tasks(client_id)
-            if client_task_count >= settings.max_tasks_per_client:
+            
+            logger.info(f"Client {client_id} has {client_task_count}/{self.max_tasks_per_client} tasks")
+            
+            if client_task_count >= self.max_tasks_per_client:
                 logger.info(f"Client {client_id} has reached max task limit")
                 return None
             
             # Get next available task
+            queue_size = self.work_queue.qsize()
+            logger.info(f"Queue has {queue_size} tasks available")
+            
             if self.work_queue.empty():
                 logger.info("No tasks available in queue")
                 return None
             
             work_unit = await self.work_queue.get()
+            logger.info(f"Retrieved task {work_unit.id} from queue")
             
             # Prepare task data for client
             task_data = {
@@ -179,7 +211,10 @@ class TaskScheduler:
             work_unit.assigned_client = client_id
             work_unit.assigned_at = datetime.utcnow()
             
-            logger.info(f"Assigned task {work_unit.id} to client {client_id}")
+            # Add to active tasks tracking
+            self.active_tasks[work_unit.id] = work_unit
+            
+            logger.info(f"Successfully assigned task {work_unit.id} to client {client_id}")
             return task_data
             
         except Exception as e:
@@ -199,6 +234,10 @@ class TaskScheduler:
             await self._process_task_results(work_unit, client_id, result_data)
             
             logger.info(f"Task {task_id} completed by client {client_id}")
+            
+            # Trigger immediate queue check to create new tasks if needed
+            asyncio.create_task(self._check_and_create_tasks())
+            
             return True
             
         except Exception as e:
@@ -215,14 +254,20 @@ class TaskScheduler:
             work_unit = self.active_tasks[task_id]
             work_unit.retry_count += 1
             
-            if work_unit.retry_count < settings.max_retry_count:
-                # Retry task
+            if work_unit.retry_count < getattr(settings, 'max_retry_count', 3):
+                # Retry task - reset assignment info
+                work_unit.assigned_client = None
+                work_unit.assigned_at = None
                 await self.work_queue.put(work_unit)
+                self.active_tasks.pop(task_id)  # Remove from active tasks
                 logger.info(f"Retrying task {task_id} (attempt {work_unit.retry_count})")
             else:
                 # Max retries reached, mark as failed
                 self.active_tasks.pop(task_id)
                 logger.error(f"Task {task_id} failed after {work_unit.retry_count} attempts")
+            
+            # Trigger immediate queue check to create new tasks if needed
+            asyncio.create_task(self._check_and_create_tasks())
             
             return True
             
@@ -232,12 +277,50 @@ class TaskScheduler:
     
     async def get_queue_status(self) -> Dict[str, Any]:
         """Get current queue status"""
+        queue_size = self.work_queue.qsize()
+        active_tasks = len(self.active_tasks)
+        active_clients = len(self.client_pool)
+        total_client_capacity = active_clients * self.max_tasks_per_client
+        
         return {
-            "pending_tasks": self.work_queue.qsize(),
-            "active_tasks": len(self.active_tasks),
-            "active_clients": len(self.client_pool),
+            "pending_tasks": queue_size,
+            "active_tasks": active_tasks,
+            "active_clients": active_clients,
+            "total_client_capacity": total_client_capacity,
+            "target_pending_tasks": self.target_pending_tasks,
+            "min_pending_tasks": self.min_pending_tasks,
+            "max_tasks_per_client": self.max_tasks_per_client,
             "timestamp": datetime.utcnow().isoformat()
         }
+    
+    async def clear_stuck_tasks(self) -> int:
+        """Clear all stuck tasks and return them to queue (for debugging)"""
+        stuck_count = len(self.active_tasks)
+        for work_unit in list(self.active_tasks.values()):
+            work_unit.assigned_client = None
+            work_unit.assigned_at = None
+            await self.work_queue.put(work_unit)
+        
+        self.active_tasks.clear()
+        logger.info(f"Cleared {stuck_count} stuck tasks back to queue")
+        return stuck_count
+    
+    def update_task_config(self, target_pending: int = None, min_pending: int = None, max_per_client: int = None):
+        """Update task management configuration"""
+        if target_pending is not None:
+            self.target_pending_tasks = max(1, target_pending)
+            logger.info(f"Updated target_pending_tasks to {self.target_pending_tasks}")
+        
+        if min_pending is not None:
+            self.min_pending_tasks = max(1, min_pending)
+            logger.info(f"Updated min_pending_tasks to {self.min_pending_tasks}")
+        
+        if max_per_client is not None:
+            self.max_tasks_per_client = max(1, max_per_client)
+            logger.info(f"Updated max_tasks_per_client to {self.max_tasks_per_client}")
+        
+        # Trigger immediate check after config change
+        asyncio.create_task(self._check_and_create_tasks())
     
     async def _process_work_queue(self):
         """Background task to process work queue"""
@@ -246,23 +329,53 @@ class TaskScheduler:
                 # Process queue every 5 seconds
                 await asyncio.sleep(5)
                 
-                # Check for available clients and tasks
-                if not self.work_queue.empty() and self.client_pool:
-                    available_clients = [
-                        client_id for client_id in self.client_pool.keys()
-                        if await self._get_client_active_tasks(client_id) < settings.max_tasks_per_client
-                    ]
-                    
-                    if available_clients:
-                        # Use load balancer to select client
-                        selected_client = self.load_balancer.select_client(
-                            available_clients, {}
-                        )
-                        await self.assign_task(selected_client)
+                # Check and create tasks if needed
+                await self._check_and_create_tasks()
                         
             except Exception as e:
                 logger.error(f"Error in work queue processor: {e}")
                 await asyncio.sleep(10)
+    
+    async def _check_and_create_tasks(self):
+        """Check if we need to create new tasks and create them"""
+        try:
+            queue_size = self.work_queue.qsize()
+            active_tasks = len(self.active_tasks)
+            active_clients = len(self.client_pool)
+            
+            # Calculate total client capacity
+            total_client_capacity = active_clients * self.max_tasks_per_client
+            
+            logger.info(f"Queue status: {queue_size} pending, {active_tasks} active, {active_clients} clients, capacity: {total_client_capacity}")
+            
+            # Create new tasks if we're below the minimum pending tasks and have clients
+            if queue_size < self.min_pending_tasks and active_clients > 0:
+                tasks_to_create = self.target_pending_tasks - queue_size
+                
+                if tasks_to_create > 0:
+                    logger.info(f"Creating {tasks_to_create} new tasks (queue: {queue_size}, active: {active_tasks}, capacity: {total_client_capacity})")
+                    
+                    await self.create_simulation_batch(
+                        name=f"Auto Batch {datetime.utcnow().strftime('%H:%M:%S')}",
+                        particle_count=tasks_to_create * 5,  # 5 particles per task
+                        time_horizon=1,
+                        spatial_bounds={
+                            "min_lat": 25.0,
+                            "max_lat": 30.0,
+                            "min_lon": -95.0,
+                            "max_lon": -85.0
+                        },
+                        parameters={
+                            "current_strength": 0.5,
+                            "wind_speed": 10.0,
+                            "priority": 1,
+                            "auto_created": True
+                        }
+                    )
+                    logger.info(f"Auto-created batch with {tasks_to_create} tasks")
+                    
+        except Exception as e:
+            logger.error(f"Error checking and creating tasks: {e}")
     
     async def _monitor_task_timeouts(self):
         """Monitor for task timeouts and handle them"""
@@ -307,9 +420,11 @@ class TaskScheduler:
     
     async def _get_client_active_tasks(self, client_id: str) -> int:
         """Get number of active tasks for a client"""
-        # This would query the database for active tasks
-        # For now, return 0 as placeholder
-        return 0
+        count = 0
+        for work_unit in self.active_tasks.values():
+            if work_unit.assigned_client == client_id:
+                count += 1
+        return count
     
     async def _process_task_results(self, work_unit: WorkUnit, client_id: str, result_data: bytes):
         """Process and store task results"""

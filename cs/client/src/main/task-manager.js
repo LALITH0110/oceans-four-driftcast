@@ -25,6 +25,10 @@ class TaskManager {
         
         // Cron job for periodic task requests
         this.taskRequestJob = null;
+        
+        // Prevent duplicate task requests
+        this.isRequestingTask = false;
+        this.lastRequestTime = 0;
     }
     
     async start() {
@@ -44,9 +48,10 @@ class TaskManager {
             this.processTask(taskData);
         });
         
-        // Start periodic task requests (every 30 seconds)
-        this.taskRequestJob = cron.schedule('*/30 * * * * *', async () => {
+        // Start periodic task requests (every 10 seconds as backup)
+        this.taskRequestJob = cron.schedule('*/10 * * * * *', async () => {
             if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
+                log.debug('Periodic task request check...');
                 await this.requestTask();
             }
         }, {
@@ -54,6 +59,14 @@ class TaskManager {
         });
         
         this.taskRequestJob.start();
+        
+        // Request initial task immediately
+        setTimeout(() => {
+            if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
+                log.info('Requesting initial task...');
+                this.requestTask();
+            }
+        }, 1000); // 1 second delay to ensure WebSocket is connected
         
         log.info('Task manager started');
     }
@@ -100,7 +113,18 @@ class TaskManager {
             return null;
         }
         
+        // Prevent duplicate requests within 1 second
+        const now = Date.now();
+        if (this.isRequestingTask || (now - this.lastRequestTime) < 1000) {
+            log.debug('Task request already in progress or too recent, skipping');
+            return null;
+        }
+        
+        this.isRequestingTask = true;
+        this.lastRequestTime = now;
+        
         try {
+            log.info('Requesting task from server...');
             // Request task from server
             const taskData = await this.serverCommunicator.requestTask();
             
@@ -111,6 +135,8 @@ class TaskManager {
             
         } catch (error) {
             log.error('Error requesting task:', error);
+        } finally {
+            this.isRequestingTask = false;
         }
         
         return null;
@@ -177,8 +203,7 @@ class TaskManager {
         
         try {
             // Send results to server
-            const serverCommunicator = require('./server-communicator');
-            await serverCommunicator.submitTaskResult(taskId, result, executionTime);
+            await this.serverCommunicator.submitTaskResult(taskId, result, executionTime);
             
             // Update statistics
             this.statistics.completed++;
@@ -192,6 +217,12 @@ class TaskManager {
             // Clean up
             this.activeTasks.delete(taskId);
             this.updateStatistics();
+            
+            // Immediately request a new task if we have capacity
+            if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
+                log.info('Task completed, immediately requesting new task...');
+                setTimeout(() => this.requestTask(), 100); // Small delay to avoid race conditions
+            }
         }
     }
     
@@ -202,8 +233,7 @@ class TaskManager {
         
         try {
             // Report failure to server
-            const serverCommunicator = require('./server-communicator');
-            await serverCommunicator.reportTaskFailure(taskId, error.message);
+            await this.serverCommunicator.reportTaskFailure(taskId, error.message);
             
         } catch (reportError) {
             log.error(`Error reporting task failure for ${taskId}:`, reportError);
@@ -215,6 +245,12 @@ class TaskManager {
             // Clean up
             this.activeTasks.delete(taskId);
             this.updateStatistics();
+            
+            // Immediately request a new task if we have capacity
+            if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
+                log.info('Task failed, immediately requesting new task...');
+                setTimeout(() => this.requestTask(), 100); // Small delay to avoid race conditions
+            }
         }
     }
     
@@ -231,8 +267,7 @@ class TaskManager {
             await taskInfo.worker.terminate();
             
             // Report cancellation to server
-            const serverCommunicator = require('./server-communicator');
-            await serverCommunicator.reportTaskFailure(taskId, `Task cancelled: ${reason}`);
+            await this.serverCommunicator.reportTaskFailure(taskId, `Task cancelled: ${reason}`);
             
         } catch (error) {
             log.error(`Error cancelling task ${taskId}:`, error);

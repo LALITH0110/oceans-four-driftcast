@@ -10,7 +10,7 @@ const store = new Store();
 
 class ServerCommunicator {
     constructor() {
-        this.serverUrl = 'http://system80.rice.iit.edu:8000'; // Hardcoded for testing
+        this.serverUrl = 'http://localhost:8000'; // Local testing
         this.wsUrl = this.serverUrl.replace('http', 'ws');
         this.clientId = null;
         this.token = null;
@@ -223,9 +223,10 @@ class ServerCommunicator {
     
     sendWebSocketMessage(message) {
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            log.debug(`Sending WebSocket message: ${message.type}`);
             this.websocket.send(JSON.stringify(message));
         } else {
-            log.warn('WebSocket not connected, cannot send message');
+            log.warn(`WebSocket not connected, cannot send message. ReadyState: ${this.websocket?.readyState}`);
         }
     }
     
@@ -268,15 +269,20 @@ class ServerCommunicator {
     
     async requestTask() {
         try {
-            // Request via WebSocket first
-            if (this.isConnected) {
+            // Temporarily force HTTP API for debugging
+            // TODO: Remove this and restore WebSocket after fixing the issue
+            if (false && this.isConnected && this.websocket && this.websocket.readyState === 1) {
+                log.debug(`Sending WebSocket task_request (readyState: ${this.websocket.readyState})`);
                 this.sendWebSocketMessage({
                     type: 'task_request'
                 });
                 return null; // Task will come via WebSocket message
+            } else {
+                log.info(`Using HTTP API instead of WebSocket for task requests`);
             }
             
             // Fallback to HTTP API
+            log.info('Using HTTP API fallback for task request');
             const response = await this.api.get('/api/v1/tasks/available');
             return response.data;
             
