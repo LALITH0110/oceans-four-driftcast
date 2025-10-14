@@ -1,0 +1,2752 @@
+{
+  "metadata": {
+    "simulation_name": "Global Ocean Plastic RL Prediction",
+    "start_date": "2020-01-01",
+    "end_date": "2025-10-13",
+    "total_days": 2112,
+    "total_steps": 301,
+    "timestep_days": 7,
+    "n_particles": 1500,
+    "n_release_points": 10,
+    "regions": {
+      "North America": 5,
+      "Central/South America": 5,
+      "Europe": 5,
+      "Africa": 5,
+      "Middle East": 2,
+      "East Asia": 7,
+      "Southeast Asia": 6,
+      "South Asia": 5,
+      "Oceania": 4,
+      "Ocean Gyres": 6
+    },
+    "rl_config": {
+      "hidden_size": 512,
+      "layers": 3,
+      "learning_rate": 0.0005,
+      "batch_size": 64,
+      "gamma": 0.99
+    }
+  },
+  "learning_summary": {
+    "initial_error_km": 113.49455540486106,
+    "final_error_km": 205.807287855664,
+    "best_error_km": 0.0,
+    "mean_error_km": 432.0060933301084,
+    "std_error_km": 466.0251881033359,
+    "improvement_percent": -81.33670564328155,
+    "total_training_steps": 301,
+    "network_updates": 44120
+  },
+  "weekly_results": [
+    {
+      "step": 0,
+      "date": "2020-01-01",
+      "days_since_start": 0,
+      "mean_reward": -0.5078799091402125,
+      "mean_error_km": 113.49455540486106,
+      "epsilon": 0.9995,
+      "samples": 20
+    },
+    {
+      "step": 1,
+      "date": "2020-01-08",
+      "days_since_start": 7,
+      "mean_reward": -0.38884873073687903,
+      "mean_error_km": 37.74339304310964,
+      "epsilon": 0.9990002500000001,
+      "samples": 20
+    },
+    {
+      "step": 2,
+      "date": "2020-01-15",
+      "days_since_start": 14,
+      "mean_reward": -0.4909964552623857,
+      "mean_error_km": 57.26077435302479,
+      "epsilon": 0.9985007498750001,
+      "samples": 20
+    },
+    {
+      "step": 3,
+      "date": "2020-01-22",
+      "days_since_start": 21,
+      "mean_reward": -1.6568633551866678,
+      "mean_error_km": 59.09263790910252,
+      "epsilon": 0.9980014995000627,
+      "samples": 20
+    },
+    {
+      "step": 4,
+      "date": "2020-01-29",
+      "days_since_start": 28,
+      "mean_reward": -3.6391436139874487,
+      "mean_error_km": 153.92745803477334,
+      "epsilon": 0.9975024987503127,
+      "samples": 20
+    },
+    {
+      "step": 5,
+      "date": "2020-02-05",
+      "days_since_start": 35,
+      "mean_reward": -2.7487318666874887,
+      "mean_error_km": 107.20351124679935,
+      "epsilon": 0.9970037475009376,
+      "samples": 20
+    },
+    {
+      "step": 6,
+      "date": "2020-02-12",
+      "days_since_start": 42,
+      "mean_reward": -5.460532294636064,
+      "mean_error_km": 116.61546484313014,
+      "epsilon": 0.9965052456271871,
+      "samples": 20
+    },
+    {
+      "step": 7,
+      "date": "2020-02-19",
+      "days_since_start": 49,
+      "mean_reward": -4.2464018665207615,
+      "mean_error_km": 90.8911360112182,
+      "epsilon": 0.9960069930043736,
+      "samples": 20
+    },
+    {
+      "step": 8,
+      "date": "2020-02-26",
+      "days_since_start": 56,
+      "mean_reward": -1.903964262979504,
+      "mean_error_km": 36.688954523121375,
+      "epsilon": 0.9955089895078715,
+      "samples": 20
+    },
+    {
+      "step": 9,
+      "date": "2020-03-04",
+      "days_since_start": 63,
+      "mean_reward": -5.758439251222552,
+      "mean_error_km": 60.95653564131642,
+      "epsilon": 0.9950112350131176,
+      "samples": 20
+    },
+    {
+      "step": 10,
+      "date": "2020-03-11",
+      "days_since_start": 70,
+      "mean_reward": -10.520914288401642,
+      "mean_error_km": 164.6463965411653,
+      "epsilon": 0.9945137293956111,
+      "samples": 20
+    },
+    {
+      "step": 11,
+      "date": "2020-03-18",
+      "days_since_start": 77,
+      "mean_reward": -10.646504391751254,
+      "mean_error_km": 157.28622592456082,
+      "epsilon": 0.9940164725309134,
+      "samples": 20
+    },
+    {
+      "step": 12,
+      "date": "2020-03-25",
+      "days_since_start": 84,
+      "mean_reward": -8.321740483669489,
+      "mean_error_km": 148.00247879819136,
+      "epsilon": 0.993519464294648,
+      "samples": 20
+    },
+    {
+      "step": 13,
+      "date": "2020-04-01",
+      "days_since_start": 91,
+      "mean_reward": -7.099161941077584,
+      "mean_error_km": 90.11486517581265,
+      "epsilon": 0.9930227045625007,
+      "samples": 20
+    },
+    {
+      "step": 14,
+      "date": "2020-04-08",
+      "days_since_start": 98,
+      "mean_reward": -3.0066336359303008,
+      "mean_error_km": 47.29525697246617,
+      "epsilon": 0.9925261932102195,
+      "samples": 20
+    },
+    {
+      "step": 15,
+      "date": "2020-04-15",
+      "days_since_start": 105,
+      "mean_reward": -8.583393761673758,
+      "mean_error_km": 87.40699456215859,
+      "epsilon": 0.9920299301136144,
+      "samples": 20
+    },
+    {
+      "step": 16,
+      "date": "2020-04-22",
+      "days_since_start": 112,
+      "mean_reward": -14.920483536256341,
+      "mean_error_km": 227.900702374597,
+      "epsilon": 0.9915339151485576,
+      "samples": 20
+    },
+    {
+      "step": 17,
+      "date": "2020-04-29",
+      "days_since_start": 119,
+      "mean_reward": -12.749964873156035,
+      "mean_error_km": 201.94811997779294,
+      "epsilon": 0.9910381481909833,
+      "samples": 20
+    },
+    {
+      "step": 18,
+      "date": "2020-05-06",
+      "days_since_start": 126,
+      "mean_reward": -10.41623740442255,
+      "mean_error_km": 94.13647687108909,
+      "epsilon": 0.990542629116888,
+      "samples": 20
+    },
+    {
+      "step": 19,
+      "date": "2020-05-13",
+      "days_since_start": 133,
+      "mean_reward": -8.21665122957615,
+      "mean_error_km": 96.33295653215497,
+      "epsilon": 0.9900473578023296,
+      "samples": 20
+    },
+    {
+      "step": 20,
+      "date": "2020-05-20",
+      "days_since_start": 140,
+      "mean_reward": -4.390977258451462,
+      "mean_error_km": 84.6692902724635,
+      "epsilon": 0.9895523341234285,
+      "samples": 20
+    },
+    {
+      "step": 21,
+      "date": "2020-05-27",
+      "days_since_start": 147,
+      "mean_reward": -8.471870077141796,
+      "mean_error_km": 60.64041408514888,
+      "epsilon": 0.9890575579563669,
+      "samples": 20
+    },
+    {
+      "step": 22,
+      "date": "2020-06-03",
+      "days_since_start": 154,
+      "mean_reward": -15.115076018587624,
+      "mean_error_km": 138.28803321245329,
+      "epsilon": 0.9885630291773887,
+      "samples": 20
+    },
+    {
+      "step": 23,
+      "date": "2020-06-10",
+      "days_since_start": 161,
+      "mean_reward": -12.706397509981691,
+      "mean_error_km": 106.9399293912505,
+      "epsilon": 0.9880687476628001,
+      "samples": 20
+    },
+    {
+      "step": 24,
+      "date": "2020-06-17",
+      "days_since_start": 168,
+      "mean_reward": -5.073084058346114,
+      "mean_error_km": 108.42764952654156,
+      "epsilon": 0.9875747132889687,
+      "samples": 20
+    },
+    {
+      "step": 25,
+      "date": "2020-06-24",
+      "days_since_start": 175,
+      "mean_reward": -4.761997605252192,
+      "mean_error_km": 49.13545228968045,
+      "epsilon": 0.9870809259323243,
+      "samples": 20
+    },
+    {
+      "step": 26,
+      "date": "2020-07-01",
+      "days_since_start": 182,
+      "mean_reward": -41.923389171027864,
+      "mean_error_km": 293.8990676874111,
+      "epsilon": 0.9865873854693582,
+      "samples": 20
+    },
+    {
+      "step": 27,
+      "date": "2020-07-08",
+      "days_since_start": 189,
+      "mean_reward": -11.91331833606632,
+      "mean_error_km": 103.31461932902286,
+      "epsilon": 0.9860940917766235,
+      "samples": 20
+    },
+    {
+      "step": 28,
+      "date": "2020-07-15",
+      "days_since_start": 196,
+      "mean_reward": -11.910857561159599,
+      "mean_error_km": 104.62751407776867,
+      "epsilon": 0.9856010447307353,
+      "samples": 20
+    },
+    {
+      "step": 29,
+      "date": "2020-07-22",
+      "days_since_start": 203,
+      "mean_reward": -43.93936364885251,
+      "mean_error_km": 333.33584478681826,
+      "epsilon": 0.98510824420837,
+      "samples": 20
+    },
+    {
+      "step": 30,
+      "date": "2020-07-29",
+      "days_since_start": 210,
+      "mean_reward": -31.050110882318375,
+      "mean_error_km": 140.50903819781814,
+      "epsilon": 0.9846156900862658,
+      "samples": 20
+    },
+    {
+      "step": 31,
+      "date": "2020-08-05",
+      "days_since_start": 217,
+      "mean_reward": -55.25962880379105,
+      "mean_error_km": 368.6125724303189,
+      "epsilon": 0.9841233822412228,
+      "samples": 20
+    },
+    {
+      "step": 32,
+      "date": "2020-08-12",
+      "days_since_start": 224,
+      "mean_reward": -69.88410133604421,
+      "mean_error_km": 342.8162984190107,
+      "epsilon": 0.9836313205501022,
+      "samples": 20
+    },
+    {
+      "step": 33,
+      "date": "2020-08-19",
+      "days_since_start": 231,
+      "mean_reward": -79.0400105457864,
+      "mean_error_km": 452.0051326726054,
+      "epsilon": 0.9831395048898272,
+      "samples": 20
+    },
+    {
+      "step": 34,
+      "date": "2020-08-26",
+      "days_since_start": 238,
+      "mean_reward": -30.645474271701907,
+      "mean_error_km": 223.98601580801815,
+      "epsilon": 0.9826479351373822,
+      "samples": 20
+    },
+    {
+      "step": 35,
+      "date": "2020-09-02",
+      "days_since_start": 245,
+      "mean_reward": -28.342836469160403,
+      "mean_error_km": 255.36003164230578,
+      "epsilon": 0.9821566111698136,
+      "samples": 20
+    },
+    {
+      "step": 36,
+      "date": "2020-09-09",
+      "days_since_start": 252,
+      "mean_reward": -81.56208728282465,
+      "mean_error_km": 610.4361142564809,
+      "epsilon": 0.9816655328642288,
+      "samples": 20
+    },
+    {
+      "step": 37,
+      "date": "2020-09-16",
+      "days_since_start": 259,
+      "mean_reward": -9.375637292255352,
+      "mean_error_km": 41.30995707138685,
+      "epsilon": 0.9811747000977967,
+      "samples": 20
+    },
+    {
+      "step": 38,
+      "date": "2020-09-23",
+      "days_since_start": 266,
+      "mean_reward": -61.02002955223088,
+      "mean_error_km": 369.9005230290265,
+      "epsilon": 0.9806841127477479,
+      "samples": 20
+    },
+    {
+      "step": 39,
+      "date": "2020-09-30",
+      "days_since_start": 273,
+      "mean_reward": -50.96510184198236,
+      "mean_error_km": 374.21640478036227,
+      "epsilon": 0.9801937706913741,
+      "samples": 20
+    },
+    {
+      "step": 40,
+      "date": "2020-10-07",
+      "days_since_start": 280,
+      "mean_reward": -45.933831583458456,
+      "mean_error_km": 204.76063403310354,
+      "epsilon": 0.9797036738060285,
+      "samples": 20
+    },
+    {
+      "step": 41,
+      "date": "2020-10-14",
+      "days_since_start": 287,
+      "mean_reward": -103.97672453276705,
+      "mean_error_km": 384.7661003993984,
+      "epsilon": 0.9792138219691255,
+      "samples": 20
+    },
+    {
+      "step": 42,
+      "date": "2020-10-21",
+      "days_since_start": 294,
+      "mean_reward": -108.76467389312651,
+      "mean_error_km": 481.41177514941427,
+      "epsilon": 0.978724215058141,
+      "samples": 20
+    },
+    {
+      "step": 43,
+      "date": "2020-10-28",
+      "days_since_start": 301,
+      "mean_reward": -11.225798026709617,
+      "mean_error_km": 26.6630532308385,
+      "epsilon": 0.978234852950612,
+      "samples": 20
+    },
+    {
+      "step": 44,
+      "date": "2020-11-04",
+      "days_since_start": 308,
+      "mean_reward": -19.5293840112921,
+      "mean_error_km": 65.3292308368198,
+      "epsilon": 0.9777457355241367,
+      "samples": 20
+    },
+    {
+      "step": 45,
+      "date": "2020-11-11",
+      "days_since_start": 315,
+      "mean_reward": -114.17685276665036,
+      "mean_error_km": 385.96083869085635,
+      "epsilon": 0.9772568626563747,
+      "samples": 20
+    },
+    {
+      "step": 46,
+      "date": "2020-11-18",
+      "days_since_start": 322,
+      "mean_reward": -74.72277053667699,
+      "mean_error_km": 250.01937086044353,
+      "epsilon": 0.9767682342250465,
+      "samples": 20
+    },
+    {
+      "step": 47,
+      "date": "2020-11-25",
+      "days_since_start": 329,
+      "mean_reward": -14.581598225227406,
+      "mean_error_km": 31.487348408451584,
+      "epsilon": 0.976279850107934,
+      "samples": 20
+    },
+    {
+      "step": 48,
+      "date": "2020-12-02",
+      "days_since_start": 336,
+      "mean_reward": -55.59493052076757,
+      "mean_error_km": 360.30994609339905,
+      "epsilon": 0.9757917101828801,
+      "samples": 20
+    },
+    {
+      "step": 49,
+      "date": "2020-12-09",
+      "days_since_start": 343,
+      "mean_reward": -51.94463856763682,
+      "mean_error_km": 56.69187915634018,
+      "epsilon": 0.9753038143277888,
+      "samples": 20
+    },
+    {
+      "step": 50,
+      "date": "2020-12-16",
+      "days_since_start": 350,
+      "mean_reward": -25.326283399869645,
+      "mean_error_km": 140.87809722467762,
+      "epsilon": 0.974816162420625,
+      "samples": 20
+    },
+    {
+      "step": 51,
+      "date": "2020-12-23",
+      "days_since_start": 357,
+      "mean_reward": -28.292960345367145,
+      "mean_error_km": 189.26235271113404,
+      "epsilon": 0.9743287543394147,
+      "samples": 20
+    },
+    {
+      "step": 52,
+      "date": "2020-12-30",
+      "days_since_start": 364,
+      "mean_reward": -56.107226143981926,
+      "mean_error_km": 420.9003472050834,
+      "epsilon": 0.973841589962245,
+      "samples": 20
+    },
+    {
+      "step": 53,
+      "date": "2021-01-06",
+      "days_since_start": 371,
+      "mean_reward": -66.68896798271535,
+      "mean_error_km": 452.79267325261696,
+      "epsilon": 0.973354669167264,
+      "samples": 20
+    },
+    {
+      "step": 54,
+      "date": "2021-01-13",
+      "days_since_start": 378,
+      "mean_reward": -1.2232721409354137,
+      "mean_error_km": 29.286234055462707,
+      "epsilon": 0.9728679918326804,
+      "samples": 20
+    },
+    {
+      "step": 55,
+      "date": "2021-01-20",
+      "days_since_start": 385,
+      "mean_reward": -24.45725692662543,
+      "mean_error_km": 59.76418770837374,
+      "epsilon": 0.972381557836764,
+      "samples": 20
+    },
+    {
+      "step": 56,
+      "date": "2021-01-27",
+      "days_since_start": 392,
+      "mean_reward": -157.72633562052235,
+      "mean_error_km": 675.2066950022083,
+      "epsilon": 0.9718953670578457,
+      "samples": 20
+    },
+    {
+      "step": 57,
+      "date": "2021-02-03",
+      "days_since_start": 399,
+      "mean_reward": -15.110170934896988,
+      "mean_error_km": 46.53739258448102,
+      "epsilon": 0.9714094193743169,
+      "samples": 20
+    },
+    {
+      "step": 58,
+      "date": "2021-02-10",
+      "days_since_start": 406,
+      "mean_reward": -139.8307824131792,
+      "mean_error_km": 559.8115737194837,
+      "epsilon": 0.9709237146646298,
+      "samples": 20
+    },
+    {
+      "step": 59,
+      "date": "2021-02-17",
+      "days_since_start": 413,
+      "mean_reward": -156.77937518429835,
+      "mean_error_km": 879.1841983969401,
+      "epsilon": 0.9704382528072976,
+      "samples": 20
+    },
+    {
+      "step": 60,
+      "date": "2021-02-24",
+      "days_since_start": 420,
+      "mean_reward": -14.441853075961586,
+      "mean_error_km": 82.32818237364873,
+      "epsilon": 0.9699530336808939,
+      "samples": 20
+    },
+    {
+      "step": 61,
+      "date": "2021-03-03",
+      "days_since_start": 427,
+      "mean_reward": -13.587932653035285,
+      "mean_error_km": 128.9215419989567,
+      "epsilon": 0.9694680571640535,
+      "samples": 20
+    },
+    {
+      "step": 62,
+      "date": "2021-03-10",
+      "days_since_start": 434,
+      "mean_reward": -0.6559308652536091,
+      "mean_error_km": 13.101198012342568,
+      "epsilon": 0.9689833231354715,
+      "samples": 20
+    },
+    {
+      "step": 63,
+      "date": "2021-03-17",
+      "days_since_start": 441,
+      "mean_reward": -10.624669738811823,
+      "mean_error_km": 79.00453129182497,
+      "epsilon": 0.9684988314739038,
+      "samples": 20
+    },
+    {
+      "step": 64,
+      "date": "2021-03-24",
+      "days_since_start": 448,
+      "mean_reward": -65.6808874274187,
+      "mean_error_km": 271.5262981135266,
+      "epsilon": 0.9680145820581669,
+      "samples": 20
+    },
+    {
+      "step": 65,
+      "date": "2021-03-31",
+      "days_since_start": 455,
+      "mean_reward": -490.6422011321035,
+      "mean_error_km": 1630.9730850474573,
+      "epsilon": 0.9675305747671379,
+      "samples": 20
+    },
+    {
+      "step": 66,
+      "date": "2021-04-07",
+      "days_since_start": 462,
+      "mean_reward": -40.61526065983715,
+      "mean_error_km": 180.15546623623482,
+      "epsilon": 0.9670468094797544,
+      "samples": 20
+    },
+    {
+      "step": 67,
+      "date": "2021-04-14",
+      "days_since_start": 469,
+      "mean_reward": -59.41552481015107,
+      "mean_error_km": 351.9875196640058,
+      "epsilon": 0.9665632860750146,
+      "samples": 20
+    },
+    {
+      "step": 68,
+      "date": "2021-04-21",
+      "days_since_start": 476,
+      "mean_reward": -5.066076991449412,
+      "mean_error_km": 33.73146077266525,
+      "epsilon": 0.9660800044319772,
+      "samples": 20
+    },
+    {
+      "step": 69,
+      "date": "2021-04-28",
+      "days_since_start": 483,
+      "mean_reward": -15.09592275980049,
+      "mean_error_km": 96.72869462110198,
+      "epsilon": 0.9655969644297613,
+      "samples": 20
+    },
+    {
+      "step": 70,
+      "date": "2021-05-05",
+      "days_since_start": 490,
+      "mean_reward": -7.431764687106229,
+      "mean_error_km": 72.28042088376587,
+      "epsilon": 0.9651141659475465,
+      "samples": 20
+    },
+    {
+      "step": 71,
+      "date": "2021-05-12",
+      "days_since_start": 497,
+      "mean_reward": -64.51092200274837,
+      "mean_error_km": 313.89584676231004,
+      "epsilon": 0.9646316088645728,
+      "samples": 20
+    },
+    {
+      "step": 72,
+      "date": "2021-05-19",
+      "days_since_start": 504,
+      "mean_reward": -129.66781048276522,
+      "mean_error_km": 629.01750881784,
+      "epsilon": 0.9641492930601405,
+      "samples": 20
+    },
+    {
+      "step": 73,
+      "date": "2021-05-26",
+      "days_since_start": 511,
+      "mean_reward": -14.15618602775439,
+      "mean_error_km": 118.66603708843164,
+      "epsilon": 0.9636672184136105,
+      "samples": 20
+    },
+    {
+      "step": 74,
+      "date": "2021-06-02",
+      "days_since_start": 518,
+      "mean_reward": -124.97822787211904,
+      "mean_error_km": 805.490265976066,
+      "epsilon": 0.9631853848044037,
+      "samples": 20
+    },
+    {
+      "step": 75,
+      "date": "2021-06-09",
+      "days_since_start": 525,
+      "mean_reward": 0.0,
+      "mean_error_km": 0.0,
+      "epsilon": 0.9627037921120016,
+      "samples": 20
+    },
+    {
+      "step": 76,
+      "date": "2021-06-16",
+      "days_since_start": 532,
+      "mean_reward": -16.962149403535406,
+      "mean_error_km": 64.4919293725853,
+      "epsilon": 0.9622224402159457,
+      "samples": 20
+    },
+    {
+      "step": 77,
+      "date": "2021-06-23",
+      "days_since_start": 539,
+      "mean_reward": -209.0131457975443,
+      "mean_error_km": 703.00482647563,
+      "epsilon": 0.9617413289958378,
+      "samples": 20
+    },
+    {
+      "step": 78,
+      "date": "2021-06-30",
+      "days_since_start": 546,
+      "mean_reward": -54.91730353257905,
+      "mean_error_km": 291.00851527574724,
+      "epsilon": 0.9612604583313399,
+      "samples": 20
+    },
+    {
+      "step": 79,
+      "date": "2021-07-07",
+      "days_since_start": 553,
+      "mean_reward": -223.64787561337948,
+      "mean_error_km": 731.0846347890243,
+      "epsilon": 0.9607798281021742,
+      "samples": 20
+    },
+    {
+      "step": 80,
+      "date": "2021-07-14",
+      "days_since_start": 560,
+      "mean_reward": -38.303192986813784,
+      "mean_error_km": 155.6917209615921,
+      "epsilon": 0.9602994381881231,
+      "samples": 20
+    },
+    {
+      "step": 81,
+      "date": "2021-07-21",
+      "days_since_start": 567,
+      "mean_reward": -123.56994338947864,
+      "mean_error_km": 129.73397322938155,
+      "epsilon": 0.9598192884690291,
+      "samples": 20
+    },
+    {
+      "step": 82,
+      "date": "2021-07-28",
+      "days_since_start": 574,
+      "mean_reward": -245.10155756482771,
+      "mean_error_km": 1067.7596198848187,
+      "epsilon": 0.9593393788247946,
+      "samples": 20
+    },
+    {
+      "step": 83,
+      "date": "2021-08-04",
+      "days_since_start": 581,
+      "mean_reward": -147.02141511713614,
+      "mean_error_km": 456.3897009290831,
+      "epsilon": 0.9588597091353822,
+      "samples": 20
+    },
+    {
+      "step": 84,
+      "date": "2021-08-11",
+      "days_since_start": 588,
+      "mean_reward": -33.38492480875574,
+      "mean_error_km": 254.79123963401435,
+      "epsilon": 0.9583802792808146,
+      "samples": 20
+    },
+    {
+      "step": 85,
+      "date": "2021-08-18",
+      "days_since_start": 595,
+      "mean_reward": -137.59117131003316,
+      "mean_error_km": 195.52639656348595,
+      "epsilon": 0.9579010891411742,
+      "samples": 20
+    },
+    {
+      "step": 86,
+      "date": "2021-08-25",
+      "days_since_start": 602,
+      "mean_reward": -37.72882769222417,
+      "mean_error_km": 161.4428812622974,
+      "epsilon": 0.9574221385966036,
+      "samples": 20
+    },
+    {
+      "step": 87,
+      "date": "2021-09-01",
+      "days_since_start": 609,
+      "mean_reward": -6.02667887901682,
+      "mean_error_km": 3.515774695888509,
+      "epsilon": 0.9569434275273054,
+      "samples": 20
+    },
+    {
+      "step": 88,
+      "date": "2021-09-08",
+      "days_since_start": 616,
+      "mean_reward": -278.8549876505135,
+      "mean_error_km": 1396.7810543399792,
+      "epsilon": 0.9564649558135419,
+      "samples": 20
+    },
+    {
+      "step": 89,
+      "date": "2021-09-15",
+      "days_since_start": 623,
+      "mean_reward": -140.29134756687398,
+      "mean_error_km": 402.52476957997175,
+      "epsilon": 0.9559867233356352,
+      "samples": 20
+    },
+    {
+      "step": 90,
+      "date": "2021-09-22",
+      "days_since_start": 630,
+      "mean_reward": -13.812273469989794,
+      "mean_error_km": 140.84532711588068,
+      "epsilon": 0.9555087299739674,
+      "samples": 20
+    },
+    {
+      "step": 91,
+      "date": "2021-09-29",
+      "days_since_start": 637,
+      "mean_reward": -2.2776978921468873,
+      "mean_error_km": 45.402332744580455,
+      "epsilon": 0.9550309756089804,
+      "samples": 20
+    },
+    {
+      "step": 92,
+      "date": "2021-10-06",
+      "days_since_start": 644,
+      "mean_reward": -15.598827019190537,
+      "mean_error_km": 124.54602082863535,
+      "epsilon": 0.954553460121176,
+      "samples": 20
+    },
+    {
+      "step": 93,
+      "date": "2021-10-13",
+      "days_since_start": 651,
+      "mean_reward": -463.0991454603027,
+      "mean_error_km": 720.8459295185273,
+      "epsilon": 0.9540761833911156,
+      "samples": 20
+    },
+    {
+      "step": 94,
+      "date": "2021-10-20",
+      "days_since_start": 658,
+      "mean_reward": -51.78079027874486,
+      "mean_error_km": 390.8406383474046,
+      "epsilon": 0.95359914529942,
+      "samples": 20
+    },
+    {
+      "step": 95,
+      "date": "2021-10-27",
+      "days_since_start": 665,
+      "mean_reward": -301.2223836030572,
+      "mean_error_km": 1234.0095420193843,
+      "epsilon": 0.9531223457267703,
+      "samples": 20
+    },
+    {
+      "step": 96,
+      "date": "2021-11-03",
+      "days_since_start": 672,
+      "mean_reward": -230.48484050137282,
+      "mean_error_km": 523.2120290199009,
+      "epsilon": 0.952645784553907,
+      "samples": 20
+    },
+    {
+      "step": 97,
+      "date": "2021-11-10",
+      "days_since_start": 679,
+      "mean_reward": -104.90500744614988,
+      "mean_error_km": 359.91518798090954,
+      "epsilon": 0.9521694616616301,
+      "samples": 20
+    },
+    {
+      "step": 98,
+      "date": "2021-11-17",
+      "days_since_start": 686,
+      "mean_reward": -298.62190926077477,
+      "mean_error_km": 988.443794521899,
+      "epsilon": 0.9516933769307994,
+      "samples": 20
+    },
+    {
+      "step": 99,
+      "date": "2021-11-24",
+      "days_since_start": 693,
+      "mean_reward": -80.84391116396674,
+      "mean_error_km": 453.28844463534153,
+      "epsilon": 0.951217530242334,
+      "samples": 20
+    },
+    {
+      "step": 100,
+      "date": "2021-12-01",
+      "days_since_start": 700,
+      "mean_reward": -110.05388941875587,
+      "mean_error_km": 285.84234320156827,
+      "epsilon": 0.9507419214772129,
+      "samples": 20
+    },
+    {
+      "step": 101,
+      "date": "2021-12-08",
+      "days_since_start": 707,
+      "mean_reward": -98.69224502068235,
+      "mean_error_km": 282.64113281850916,
+      "epsilon": 0.9502665505164744,
+      "samples": 20
+    },
+    {
+      "step": 102,
+      "date": "2021-12-15",
+      "days_since_start": 714,
+      "mean_reward": -20.291938338505883,
+      "mean_error_km": 19.812904623381563,
+      "epsilon": 0.9497914172412162,
+      "samples": 20
+    },
+    {
+      "step": 103,
+      "date": "2021-12-22",
+      "days_since_start": 721,
+      "mean_reward": -57.703946436178725,
+      "mean_error_km": 681.9583469192874,
+      "epsilon": 0.9493165215325956,
+      "samples": 20
+    },
+    {
+      "step": 104,
+      "date": "2021-12-29",
+      "days_since_start": 728,
+      "mean_reward": -402.3184371170045,
+      "mean_error_km": 412.2251607098848,
+      "epsilon": 0.9488418632718294,
+      "samples": 20
+    },
+    {
+      "step": 105,
+      "date": "2022-01-05",
+      "days_since_start": 735,
+      "mean_reward": -92.09618516003864,
+      "mean_error_km": 300.16657940988273,
+      "epsilon": 0.9483674423401935,
+      "samples": 20
+    },
+    {
+      "step": 106,
+      "date": "2022-01-12",
+      "days_since_start": 742,
+      "mean_reward": -51.24944869923362,
+      "mean_error_km": 336.52088123740623,
+      "epsilon": 0.9478932586190235,
+      "samples": 20
+    },
+    {
+      "step": 107,
+      "date": "2022-01-19",
+      "days_since_start": 749,
+      "mean_reward": -44.44731388509968,
+      "mean_error_km": 275.61942461312293,
+      "epsilon": 0.9474193119897141,
+      "samples": 20
+    },
+    {
+      "step": 108,
+      "date": "2022-01-26",
+      "days_since_start": 756,
+      "mean_reward": -115.61718765238899,
+      "mean_error_km": 474.47178352756026,
+      "epsilon": 0.9469456023337193,
+      "samples": 20
+    },
+    {
+      "step": 109,
+      "date": "2022-02-02",
+      "days_since_start": 763,
+      "mean_reward": -43.87331133511235,
+      "mean_error_km": 167.24698105672564,
+      "epsilon": 0.9464721295325524,
+      "samples": 20
+    },
+    {
+      "step": 110,
+      "date": "2022-02-09",
+      "days_since_start": 770,
+      "mean_reward": -364.7212200280454,
+      "mean_error_km": 660.6976074458039,
+      "epsilon": 0.9459988934677862,
+      "samples": 20
+    },
+    {
+      "step": 111,
+      "date": "2022-02-16",
+      "days_since_start": 777,
+      "mean_reward": -123.4708616381643,
+      "mean_error_km": 133.97578094670826,
+      "epsilon": 0.9455258940210524,
+      "samples": 20
+    },
+    {
+      "step": 112,
+      "date": "2022-02-23",
+      "days_since_start": 784,
+      "mean_reward": -129.274982158476,
+      "mean_error_km": 1132.8773962604791,
+      "epsilon": 0.9450531310740419,
+      "samples": 20
+    },
+    {
+      "step": 113,
+      "date": "2022-03-02",
+      "days_since_start": 791,
+      "mean_reward": -31.779330583663132,
+      "mean_error_km": 184.05790548699028,
+      "epsilon": 0.9445806045085049,
+      "samples": 20
+    },
+    {
+      "step": 114,
+      "date": "2022-03-09",
+      "days_since_start": 798,
+      "mean_reward": -80.40443314432258,
+      "mean_error_km": 114.16958188154467,
+      "epsilon": 0.9441083142062507,
+      "samples": 20
+    },
+    {
+      "step": 115,
+      "date": "2022-03-16",
+      "days_since_start": 805,
+      "mean_reward": -24.91932276999912,
+      "mean_error_km": 43.741191909485295,
+      "epsilon": 0.9436362600491477,
+      "samples": 20
+    },
+    {
+      "step": 116,
+      "date": "2022-03-23",
+      "days_since_start": 812,
+      "mean_reward": -229.54057407957492,
+      "mean_error_km": 975.4769946247103,
+      "epsilon": 0.9431644419191232,
+      "samples": 20
+    },
+    {
+      "step": 117,
+      "date": "2022-03-30",
+      "days_since_start": 819,
+      "mean_reward": -40.630306693651164,
+      "mean_error_km": 89.11593530553118,
+      "epsilon": 0.9426928596981636,
+      "samples": 20
+    },
+    {
+      "step": 118,
+      "date": "2022-04-06",
+      "days_since_start": 826,
+      "mean_reward": -27.86876826848628,
+      "mean_error_km": 237.60698027772088,
+      "epsilon": 0.9422215132683146,
+      "samples": 20
+    },
+    {
+      "step": 119,
+      "date": "2022-04-13",
+      "days_since_start": 833,
+      "mean_reward": -10.683912328148502,
+      "mean_error_km": 49.79956359768835,
+      "epsilon": 0.9417504025116805,
+      "samples": 20
+    },
+    {
+      "step": 120,
+      "date": "2022-04-20",
+      "days_since_start": 840,
+      "mean_reward": -110.63867548487505,
+      "mean_error_km": 764.9226505808814,
+      "epsilon": 0.9412795273104247,
+      "samples": 20
+    },
+    {
+      "step": 121,
+      "date": "2022-04-27",
+      "days_since_start": 847,
+      "mean_reward": -9.463704465793416,
+      "mean_error_km": 70.50870844046544,
+      "epsilon": 0.9408088875467696,
+      "samples": 20
+    },
+    {
+      "step": 122,
+      "date": "2022-05-04",
+      "days_since_start": 854,
+      "mean_reward": -16.5897130883827,
+      "mean_error_km": 119.07238008533179,
+      "epsilon": 0.9403384831029963,
+      "samples": 20
+    },
+    {
+      "step": 123,
+      "date": "2022-05-11",
+      "days_since_start": 861,
+      "mean_reward": -0.7834423895921803,
+      "mean_error_km": 17.93031564412444,
+      "epsilon": 0.9398683138614449,
+      "samples": 20
+    },
+    {
+      "step": 124,
+      "date": "2022-05-18",
+      "days_since_start": 868,
+      "mean_reward": -174.23843997362047,
+      "mean_error_km": 120.40021940111428,
+      "epsilon": 0.9393983797045142,
+      "samples": 20
+    },
+    {
+      "step": 125,
+      "date": "2022-05-25",
+      "days_since_start": 875,
+      "mean_reward": -2.5057063090852942,
+      "mean_error_km": 22.03987154956149,
+      "epsilon": 0.938928680514662,
+      "samples": 20
+    },
+    {
+      "step": 126,
+      "date": "2022-06-01",
+      "days_since_start": 882,
+      "mean_reward": -116.59504451402458,
+      "mean_error_km": 375.4381452662091,
+      "epsilon": 0.9384592161744048,
+      "samples": 20
+    },
+    {
+      "step": 127,
+      "date": "2022-06-08",
+      "days_since_start": 889,
+      "mean_reward": -96.25527132132461,
+      "mean_error_km": 153.15595502586797,
+      "epsilon": 0.9379899865663176,
+      "samples": 20
+    },
+    {
+      "step": 128,
+      "date": "2022-06-15",
+      "days_since_start": 896,
+      "mean_reward": -4.638065441026322,
+      "mean_error_km": 41.325889644451834,
+      "epsilon": 0.9375209915730345,
+      "samples": 20
+    },
+    {
+      "step": 129,
+      "date": "2022-06-22",
+      "days_since_start": 903,
+      "mean_reward": -70.0339455120572,
+      "mean_error_km": 191.66656147754617,
+      "epsilon": 0.937052231077248,
+      "samples": 20
+    },
+    {
+      "step": 130,
+      "date": "2022-06-29",
+      "days_since_start": 910,
+      "mean_reward": -267.3083966789302,
+      "mean_error_km": 815.8285891653678,
+      "epsilon": 0.9365837049617094,
+      "samples": 20
+    },
+    {
+      "step": 131,
+      "date": "2022-07-06",
+      "days_since_start": 917,
+      "mean_reward": -450.6586310284887,
+      "mean_error_km": 1125.8906088436415,
+      "epsilon": 0.9361154131092286,
+      "samples": 20
+    },
+    {
+      "step": 132,
+      "date": "2022-07-13",
+      "days_since_start": 924,
+      "mean_reward": -60.085368750988756,
+      "mean_error_km": 229.0338328419219,
+      "epsilon": 0.9356473554026741,
+      "samples": 20
+    },
+    {
+      "step": 133,
+      "date": "2022-07-20",
+      "days_since_start": 931,
+      "mean_reward": -299.7271641401837,
+      "mean_error_km": 1083.3476536106348,
+      "epsilon": 0.9351795317249728,
+      "samples": 20
+    },
+    {
+      "step": 134,
+      "date": "2022-07-27",
+      "days_since_start": 938,
+      "mean_reward": -291.05026468982015,
+      "mean_error_km": 1055.682261352045,
+      "epsilon": 0.9347119419591103,
+      "samples": 20
+    },
+    {
+      "step": 135,
+      "date": "2022-08-03",
+      "days_since_start": 945,
+      "mean_reward": -204.0974028296435,
+      "mean_error_km": 275.9229422708609,
+      "epsilon": 0.9342445859881309,
+      "samples": 20
+    },
+    {
+      "step": 136,
+      "date": "2022-08-10",
+      "days_since_start": 952,
+      "mean_reward": -325.4978055199631,
+      "mean_error_km": 1659.0746940672161,
+      "epsilon": 0.9337774636951368,
+      "samples": 20
+    },
+    {
+      "step": 137,
+      "date": "2022-08-17",
+      "days_since_start": 959,
+      "mean_reward": -43.056132123363184,
+      "mean_error_km": 87.99971367580093,
+      "epsilon": 0.9333105749632893,
+      "samples": 20
+    },
+    {
+      "step": 138,
+      "date": "2022-08-24",
+      "days_since_start": 966,
+      "mean_reward": -233.83436098968997,
+      "mean_error_km": 423.07113766649854,
+      "epsilon": 0.9328439196758077,
+      "samples": 20
+    },
+    {
+      "step": 139,
+      "date": "2022-08-31",
+      "days_since_start": 973,
+      "mean_reward": -27.82422860653235,
+      "mean_error_km": 260.8592910845963,
+      "epsilon": 0.9323774977159699,
+      "samples": 20
+    },
+    {
+      "step": 140,
+      "date": "2022-09-07",
+      "days_since_start": 980,
+      "mean_reward": -7.3694769200611345,
+      "mean_error_km": 143.01492226434883,
+      "epsilon": 0.9319113089671119,
+      "samples": 20
+    },
+    {
+      "step": 141,
+      "date": "2022-09-14",
+      "days_since_start": 987,
+      "mean_reward": -15.556261162735513,
+      "mean_error_km": 144.93886310129156,
+      "epsilon": 0.9314453533126285,
+      "samples": 20
+    },
+    {
+      "step": 142,
+      "date": "2022-09-21",
+      "days_since_start": 994,
+      "mean_reward": -611.5663023639945,
+      "mean_error_km": 1823.8394216908796,
+      "epsilon": 0.9309796306359722,
+      "samples": 20
+    },
+    {
+      "step": 143,
+      "date": "2022-09-28",
+      "days_since_start": 1001,
+      "mean_reward": -345.70464880545114,
+      "mean_error_km": 288.0469995275163,
+      "epsilon": 0.9305141408206543,
+      "samples": 20
+    },
+    {
+      "step": 144,
+      "date": "2022-10-05",
+      "days_since_start": 1008,
+      "mean_reward": -951.9982029021696,
+      "mean_error_km": 2100.576435451086,
+      "epsilon": 0.9300488837502441,
+      "samples": 20
+    },
+    {
+      "step": 145,
+      "date": "2022-10-12",
+      "days_since_start": 1015,
+      "mean_reward": -582.3931348374474,
+      "mean_error_km": 1992.4249298876282,
+      "epsilon": 0.9295838593083691,
+      "samples": 20
+    },
+    {
+      "step": 146,
+      "date": "2022-10-19",
+      "days_since_start": 1022,
+      "mean_reward": -52.34353028522908,
+      "mean_error_km": 248.6030977504529,
+      "epsilon": 0.929119067378715,
+      "samples": 20
+    },
+    {
+      "step": 147,
+      "date": "2022-10-26",
+      "days_since_start": 1029,
+      "mean_reward": -588.6658079254397,
+      "mean_error_km": 1330.4442741619291,
+      "epsilon": 0.9286545078450257,
+      "samples": 20
+    },
+    {
+      "step": 148,
+      "date": "2022-11-02",
+      "days_since_start": 1036,
+      "mean_reward": -67.95259659018996,
+      "mean_error_km": 359.49494953296966,
+      "epsilon": 0.9281901805911033,
+      "samples": 20
+    },
+    {
+      "step": 149,
+      "date": "2022-11-09",
+      "days_since_start": 1043,
+      "mean_reward": -154.62757093969623,
+      "mean_error_km": 107.81045819773587,
+      "epsilon": 0.9277260855008077,
+      "samples": 20
+    },
+    {
+      "step": 150,
+      "date": "2022-11-16",
+      "days_since_start": 1050,
+      "mean_reward": -78.17521201661125,
+      "mean_error_km": 341.06214838258063,
+      "epsilon": 0.9272622224580573,
+      "samples": 20
+    },
+    {
+      "step": 151,
+      "date": "2022-11-23",
+      "days_since_start": 1057,
+      "mean_reward": -40.05065434179617,
+      "mean_error_km": 210.71614711019774,
+      "epsilon": 0.9267985913468284,
+      "samples": 20
+    },
+    {
+      "step": 152,
+      "date": "2022-11-30",
+      "days_since_start": 1064,
+      "mean_reward": -38.62256333424161,
+      "mean_error_km": 253.90799312834594,
+      "epsilon": 0.926335192051155,
+      "samples": 20
+    },
+    {
+      "step": 153,
+      "date": "2022-12-07",
+      "days_since_start": 1071,
+      "mean_reward": -157.61505655938146,
+      "mean_error_km": 407.4619900852019,
+      "epsilon": 0.9258720244551295,
+      "samples": 20
+    },
+    {
+      "step": 154,
+      "date": "2022-12-14",
+      "days_since_start": 1078,
+      "mean_reward": -20.872349996207298,
+      "mean_error_km": 148.94055872638737,
+      "epsilon": 0.925409088442902,
+      "samples": 20
+    },
+    {
+      "step": 155,
+      "date": "2022-12-21",
+      "days_since_start": 1085,
+      "mean_reward": -2.5349189813892408,
+      "mean_error_km": 26.988042607413057,
+      "epsilon": 0.9249463838986807,
+      "samples": 20
+    },
+    {
+      "step": 156,
+      "date": "2022-12-28",
+      "days_since_start": 1092,
+      "mean_reward": -41.878445919653245,
+      "mean_error_km": 353.5120771814946,
+      "epsilon": 0.9244839107067314,
+      "samples": 20
+    },
+    {
+      "step": 157,
+      "date": "2023-01-04",
+      "days_since_start": 1099,
+      "mean_reward": -347.51154966429067,
+      "mean_error_km": 1274.1980227776244,
+      "epsilon": 0.9240216687513781,
+      "samples": 20
+    },
+    {
+      "step": 158,
+      "date": "2023-01-11",
+      "days_since_start": 1106,
+      "mean_reward": -402.9391806315301,
+      "mean_error_km": 700.1710842310052,
+      "epsilon": 0.9235596579170025,
+      "samples": 20
+    },
+    {
+      "step": 159,
+      "date": "2023-01-18",
+      "days_since_start": 1113,
+      "mean_reward": -17.84536970859414,
+      "mean_error_km": 246.76675326480364,
+      "epsilon": 0.923097878088044,
+      "samples": 20
+    },
+    {
+      "step": 160,
+      "date": "2023-01-25",
+      "days_since_start": 1120,
+      "mean_reward": -644.1864346842406,
+      "mean_error_km": 1564.2293102599594,
+      "epsilon": 0.9226363291490001,
+      "samples": 20
+    },
+    {
+      "step": 161,
+      "date": "2023-02-01",
+      "days_since_start": 1127,
+      "mean_reward": -348.44122418584936,
+      "mean_error_km": 1676.422413405875,
+      "epsilon": 0.9221750109844257,
+      "samples": 20
+    },
+    {
+      "step": 162,
+      "date": "2023-02-08",
+      "days_since_start": 1134,
+      "mean_reward": -143.38913671358915,
+      "mean_error_km": 770.0450276790144,
+      "epsilon": 0.9217139234789336,
+      "samples": 20
+    },
+    {
+      "step": 163,
+      "date": "2023-02-15",
+      "days_since_start": 1141,
+      "mean_reward": -759.4160074593699,
+      "mean_error_km": 2831.955691699267,
+      "epsilon": 0.9212530665171942,
+      "samples": 20
+    },
+    {
+      "step": 164,
+      "date": "2023-02-22",
+      "days_since_start": 1148,
+      "mean_reward": -30.194303327453895,
+      "mean_error_km": 262.7806566117573,
+      "epsilon": 0.9207924399839357,
+      "samples": 20
+    },
+    {
+      "step": 165,
+      "date": "2023-03-01",
+      "days_since_start": 1155,
+      "mean_reward": -69.09421420786282,
+      "mean_error_km": 243.2569622797883,
+      "epsilon": 0.9203320437639437,
+      "samples": 20
+    },
+    {
+      "step": 166,
+      "date": "2023-03-08",
+      "days_since_start": 1162,
+      "mean_reward": -103.19897297365235,
+      "mean_error_km": 496.74392660405755,
+      "epsilon": 0.9198718777420618,
+      "samples": 20
+    },
+    {
+      "step": 167,
+      "date": "2023-03-15",
+      "days_since_start": 1169,
+      "mean_reward": -12.541404943801176,
+      "mean_error_km": 75.75611464786397,
+      "epsilon": 0.9194119418031909,
+      "samples": 20
+    },
+    {
+      "step": 168,
+      "date": "2023-03-22",
+      "days_since_start": 1176,
+      "mean_reward": -16.381979821110313,
+      "mean_error_km": 154.7781312264088,
+      "epsilon": 0.9189522358322894,
+      "samples": 20
+    },
+    {
+      "step": 169,
+      "date": "2023-03-29",
+      "days_since_start": 1183,
+      "mean_reward": -198.93209788350023,
+      "mean_error_km": 963.6869746584077,
+      "epsilon": 0.9184927597143733,
+      "samples": 20
+    },
+    {
+      "step": 170,
+      "date": "2023-04-05",
+      "days_since_start": 1190,
+      "mean_reward": -270.8064602165558,
+      "mean_error_km": 942.9089380682874,
+      "epsilon": 0.9180335133345161,
+      "samples": 20
+    },
+    {
+      "step": 171,
+      "date": "2023-04-12",
+      "days_since_start": 1197,
+      "mean_reward": -143.30684276353975,
+      "mean_error_km": 424.49240489235956,
+      "epsilon": 0.917574496577849,
+      "samples": 20
+    },
+    {
+      "step": 172,
+      "date": "2023-04-19",
+      "days_since_start": 1204,
+      "mean_reward": -3.028543364717835,
+      "mean_error_km": 32.23130771727254,
+      "epsilon": 0.9171157093295601,
+      "samples": 20
+    },
+    {
+      "step": 173,
+      "date": "2023-04-26",
+      "days_since_start": 1211,
+      "mean_reward": -448.0284872321039,
+      "mean_error_km": 1054.962289306342,
+      "epsilon": 0.9166571514748953,
+      "samples": 20
+    },
+    {
+      "step": 174,
+      "date": "2023-05-03",
+      "days_since_start": 1218,
+      "mean_reward": -80.04090317772491,
+      "mean_error_km": 309.8766731838489,
+      "epsilon": 0.916198822899158,
+      "samples": 20
+    },
+    {
+      "step": 175,
+      "date": "2023-05-10",
+      "days_since_start": 1225,
+      "mean_reward": -15.631532347116035,
+      "mean_error_km": 113.12289889941499,
+      "epsilon": 0.9157407234877085,
+      "samples": 20
+    },
+    {
+      "step": 176,
+      "date": "2023-05-17",
+      "days_since_start": 1232,
+      "mean_reward": -120.7186295513757,
+      "mean_error_km": 230.96074550818656,
+      "epsilon": 0.9152828531259647,
+      "samples": 20
+    },
+    {
+      "step": 177,
+      "date": "2023-05-24",
+      "days_since_start": 1239,
+      "mean_reward": -135.469642490299,
+      "mean_error_km": 520.5333358647496,
+      "epsilon": 0.9148252116994018,
+      "samples": 20
+    },
+    {
+      "step": 178,
+      "date": "2023-05-31",
+      "days_since_start": 1246,
+      "mean_reward": -22.854330368962472,
+      "mean_error_km": 54.71185919010945,
+      "epsilon": 0.9143677990935521,
+      "samples": 20
+    },
+    {
+      "step": 179,
+      "date": "2023-06-07",
+      "days_since_start": 1253,
+      "mean_reward": -272.98955183812166,
+      "mean_error_km": 873.3772080948278,
+      "epsilon": 0.9139106151940054,
+      "samples": 20
+    },
+    {
+      "step": 180,
+      "date": "2023-06-14",
+      "days_since_start": 1260,
+      "mean_reward": -129.92150444217492,
+      "mean_error_km": 559.5851782743852,
+      "epsilon": 0.9134536598864085,
+      "samples": 20
+    },
+    {
+      "step": 181,
+      "date": "2023-06-21",
+      "days_since_start": 1267,
+      "mean_reward": -231.78533351915604,
+      "mean_error_km": 1399.8919274825828,
+      "epsilon": 0.9129969330564653,
+      "samples": 20
+    },
+    {
+      "step": 182,
+      "date": "2023-06-28",
+      "days_since_start": 1274,
+      "mean_reward": -76.35347468146483,
+      "mean_error_km": 286.4633083565726,
+      "epsilon": 0.9125404345899372,
+      "samples": 20
+    },
+    {
+      "step": 183,
+      "date": "2023-07-05",
+      "days_since_start": 1281,
+      "mean_reward": -1004.0324873322209,
+      "mean_error_km": 1707.9725773794275,
+      "epsilon": 0.9120841643726423,
+      "samples": 20
+    },
+    {
+      "step": 184,
+      "date": "2023-07-12",
+      "days_since_start": 1288,
+      "mean_reward": -37.34234335439804,
+      "mean_error_km": 183.27972269201635,
+      "epsilon": 0.911628122290456,
+      "samples": 20
+    },
+    {
+      "step": 185,
+      "date": "2023-07-19",
+      "days_since_start": 1295,
+      "mean_reward": -26.86646001810282,
+      "mean_error_km": 52.387472185329386,
+      "epsilon": 0.9111723082293108,
+      "samples": 20
+    },
+    {
+      "step": 186,
+      "date": "2023-07-26",
+      "days_since_start": 1302,
+      "mean_reward": -21.547989764408474,
+      "mean_error_km": 200.54448240889346,
+      "epsilon": 0.9107167220751963,
+      "samples": 20
+    },
+    {
+      "step": 187,
+      "date": "2023-08-02",
+      "days_since_start": 1309,
+      "mean_reward": -37.43044599344517,
+      "mean_error_km": 30.867908337960017,
+      "epsilon": 0.9102613637141588,
+      "samples": 20
+    },
+    {
+      "step": 188,
+      "date": "2023-08-09",
+      "days_since_start": 1316,
+      "mean_reward": -567.8751566057192,
+      "mean_error_km": 906.3919055889468,
+      "epsilon": 0.9098062330323018,
+      "samples": 20
+    },
+    {
+      "step": 189,
+      "date": "2023-08-16",
+      "days_since_start": 1323,
+      "mean_reward": -521.4316544554297,
+      "mean_error_km": 1725.1204186063205,
+      "epsilon": 0.9093513299157857,
+      "samples": 20
+    },
+    {
+      "step": 190,
+      "date": "2023-08-23",
+      "days_since_start": 1330,
+      "mean_reward": -101.19661958183428,
+      "mean_error_km": 594.1693456581144,
+      "epsilon": 0.9088966542508279,
+      "samples": 20
+    },
+    {
+      "step": 191,
+      "date": "2023-08-30",
+      "days_since_start": 1337,
+      "mean_reward": -58.42881504225035,
+      "mean_error_km": 178.96456135353716,
+      "epsilon": 0.9084422059237025,
+      "samples": 20
+    },
+    {
+      "step": 192,
+      "date": "2023-09-06",
+      "days_since_start": 1344,
+      "mean_reward": -38.646005747494385,
+      "mean_error_km": 107.5521390646006,
+      "epsilon": 0.9079879848207407,
+      "samples": 20
+    },
+    {
+      "step": 193,
+      "date": "2023-09-13",
+      "days_since_start": 1351,
+      "mean_reward": -26.303127531329515,
+      "mean_error_km": 150.330033494283,
+      "epsilon": 0.9075339908283304,
+      "samples": 20
+    },
+    {
+      "step": 194,
+      "date": "2023-09-20",
+      "days_since_start": 1358,
+      "mean_reward": -56.77374171462336,
+      "mean_error_km": 61.41606927210555,
+      "epsilon": 0.9070802238329163,
+      "samples": 20
+    },
+    {
+      "step": 195,
+      "date": "2023-09-27",
+      "days_since_start": 1365,
+      "mean_reward": -261.37908158356817,
+      "mean_error_km": 962.3645319408148,
+      "epsilon": 0.9066266837209999,
+      "samples": 20
+    },
+    {
+      "step": 196,
+      "date": "2023-10-04",
+      "days_since_start": 1372,
+      "mean_reward": -554.2769113906631,
+      "mean_error_km": 334.8555713033923,
+      "epsilon": 0.9061733703791394,
+      "samples": 20
+    },
+    {
+      "step": 197,
+      "date": "2023-10-11",
+      "days_since_start": 1379,
+      "mean_reward": -294.7174019478281,
+      "mean_error_km": 1092.2259702065426,
+      "epsilon": 0.9057202836939499,
+      "samples": 20
+    },
+    {
+      "step": 198,
+      "date": "2023-10-18",
+      "days_since_start": 1386,
+      "mean_reward": -35.345097953019334,
+      "mean_error_km": 165.98832868968378,
+      "epsilon": 0.9052674235521029,
+      "samples": 20
+    },
+    {
+      "step": 199,
+      "date": "2023-10-25",
+      "days_since_start": 1393,
+      "mean_reward": -102.99159782369759,
+      "mean_error_km": 363.693135217119,
+      "epsilon": 0.9048147898403269,
+      "samples": 20
+    },
+    {
+      "step": 200,
+      "date": "2023-11-01",
+      "days_since_start": 1400,
+      "mean_reward": -131.54055120567082,
+      "mean_error_km": 750.1567892650504,
+      "epsilon": 0.9043623824454068,
+      "samples": 20
+    },
+    {
+      "step": 201,
+      "date": "2023-11-08",
+      "days_since_start": 1407,
+      "mean_reward": -110.72345404331466,
+      "mean_error_km": 414.5377461311644,
+      "epsilon": 0.9039102012541841,
+      "samples": 20
+    },
+    {
+      "step": 202,
+      "date": "2023-11-15",
+      "days_since_start": 1414,
+      "mean_reward": -25.442104683335895,
+      "mean_error_km": 69.34621703193523,
+      "epsilon": 0.9034582461535571,
+      "samples": 20
+    },
+    {
+      "step": 203,
+      "date": "2023-11-22",
+      "days_since_start": 1421,
+      "mean_reward": -85.71166396037975,
+      "mean_error_km": 117.51128387403222,
+      "epsilon": 0.9030065170304803,
+      "samples": 20
+    },
+    {
+      "step": 204,
+      "date": "2023-11-29",
+      "days_since_start": 1428,
+      "mean_reward": -180.4047582197349,
+      "mean_error_km": 669.026377489963,
+      "epsilon": 0.9025550137719651,
+      "samples": 20
+    },
+    {
+      "step": 205,
+      "date": "2023-12-06",
+      "days_since_start": 1435,
+      "mean_reward": -1.3139078186351854,
+      "mean_error_km": 11.254435524352056,
+      "epsilon": 0.9021037362650792,
+      "samples": 20
+    },
+    {
+      "step": 206,
+      "date": "2023-12-13",
+      "days_since_start": 1442,
+      "mean_reward": -13.453381902138142,
+      "mean_error_km": 68.36715746200056,
+      "epsilon": 0.9016526843969468,
+      "samples": 20
+    },
+    {
+      "step": 207,
+      "date": "2023-12-20",
+      "days_since_start": 1449,
+      "mean_reward": -30.886363981396983,
+      "mean_error_km": 103.98690284383581,
+      "epsilon": 0.9012018580547484,
+      "samples": 20
+    },
+    {
+      "step": 208,
+      "date": "2023-12-27",
+      "days_since_start": 1456,
+      "mean_reward": -46.76084016574687,
+      "mean_error_km": 274.6120292446274,
+      "epsilon": 0.900751257125721,
+      "samples": 20
+    },
+    {
+      "step": 209,
+      "date": "2024-01-03",
+      "days_since_start": 1463,
+      "mean_reward": -8.939630017089605,
+      "mean_error_km": 77.3122239918637,
+      "epsilon": 0.9003008814971583,
+      "samples": 20
+    },
+    {
+      "step": 210,
+      "date": "2024-01-10",
+      "days_since_start": 1470,
+      "mean_reward": -127.69355380540233,
+      "mean_error_km": 445.0297274638309,
+      "epsilon": 0.8998507310564098,
+      "samples": 20
+    },
+    {
+      "step": 211,
+      "date": "2024-01-17",
+      "days_since_start": 1477,
+      "mean_reward": -861.0700337025621,
+      "mean_error_km": 504.8213828003157,
+      "epsilon": 0.8994008056908817,
+      "samples": 20
+    },
+    {
+      "step": 212,
+      "date": "2024-01-24",
+      "days_since_start": 1484,
+      "mean_reward": -17.469896868956063,
+      "mean_error_km": 127.29889708343919,
+      "epsilon": 0.8989511052880362,
+      "samples": 20
+    },
+    {
+      "step": 213,
+      "date": "2024-01-31",
+      "days_since_start": 1491,
+      "mean_reward": -160.21037742187235,
+      "mean_error_km": 143.712710924892,
+      "epsilon": 0.8985016297353923,
+      "samples": 20
+    },
+    {
+      "step": 214,
+      "date": "2024-02-07",
+      "days_since_start": 1498,
+      "mean_reward": -8.04782043809048,
+      "mean_error_km": 57.58616902616709,
+      "epsilon": 0.8980523789205246,
+      "samples": 20
+    },
+    {
+      "step": 215,
+      "date": "2024-02-14",
+      "days_since_start": 1505,
+      "mean_reward": -158.59572832045393,
+      "mean_error_km": 254.5641546234039,
+      "epsilon": 0.8976033527310644,
+      "samples": 20
+    },
+    {
+      "step": 216,
+      "date": "2024-02-21",
+      "days_since_start": 1512,
+      "mean_reward": -295.36842481892506,
+      "mean_error_km": 1057.681316426652,
+      "epsilon": 0.8971545510546989,
+      "samples": 20
+    },
+    {
+      "step": 217,
+      "date": "2024-02-28",
+      "days_since_start": 1519,
+      "mean_reward": -57.46940387692537,
+      "mean_error_km": 56.71785073825744,
+      "epsilon": 0.8967059737791716,
+      "samples": 20
+    },
+    {
+      "step": 218,
+      "date": "2024-03-06",
+      "days_since_start": 1526,
+      "mean_reward": -132.75815847622547,
+      "mean_error_km": 572.2975373415703,
+      "epsilon": 0.8962576207922821,
+      "samples": 20
+    },
+    {
+      "step": 219,
+      "date": "2024-03-13",
+      "days_since_start": 1533,
+      "mean_reward": -254.065782799068,
+      "mean_error_km": 759.7278548174105,
+      "epsilon": 0.895809491981886,
+      "samples": 20
+    },
+    {
+      "step": 220,
+      "date": "2024-03-20",
+      "days_since_start": 1540,
+      "mean_reward": -350.0966383459187,
+      "mean_error_km": 815.1938181294654,
+      "epsilon": 0.8953615872358951,
+      "samples": 20
+    },
+    {
+      "step": 221,
+      "date": "2024-03-27",
+      "days_since_start": 1547,
+      "mean_reward": -647.5885517466645,
+      "mean_error_km": 89.49632815272722,
+      "epsilon": 0.8949139064422772,
+      "samples": 20
+    },
+    {
+      "step": 222,
+      "date": "2024-04-03",
+      "days_since_start": 1554,
+      "mean_reward": -119.26088828617257,
+      "mean_error_km": 245.51122083628715,
+      "epsilon": 0.8944664494890561,
+      "samples": 20
+    },
+    {
+      "step": 223,
+      "date": "2024-04-10",
+      "days_since_start": 1561,
+      "mean_reward": -55.8122698972261,
+      "mean_error_km": 305.2009660045631,
+      "epsilon": 0.8940192162643116,
+      "samples": 20
+    },
+    {
+      "step": 224,
+      "date": "2024-04-17",
+      "days_since_start": 1568,
+      "mean_reward": -772.7877785841941,
+      "mean_error_km": 1358.8968868108914,
+      "epsilon": 0.8935722066561794,
+      "samples": 20
+    },
+    {
+      "step": 225,
+      "date": "2024-04-24",
+      "days_since_start": 1575,
+      "mean_reward": -521.9434786259111,
+      "mean_error_km": 939.1804209521558,
+      "epsilon": 0.8931254205528514,
+      "samples": 20
+    },
+    {
+      "step": 226,
+      "date": "2024-05-01",
+      "days_since_start": 1582,
+      "mean_reward": -75.50899769234726,
+      "mean_error_km": 296.8809933979001,
+      "epsilon": 0.8926788578425751,
+      "samples": 20
+    },
+    {
+      "step": 227,
+      "date": "2024-05-08",
+      "days_since_start": 1589,
+      "mean_reward": -329.8022094249789,
+      "mean_error_km": 1244.0569224714486,
+      "epsilon": 0.8922325184136538,
+      "samples": 20
+    },
+    {
+      "step": 228,
+      "date": "2024-05-15",
+      "days_since_start": 1596,
+      "mean_reward": -134.6201832974918,
+      "mean_error_km": 900.8605710129552,
+      "epsilon": 0.891786402154447,
+      "samples": 20
+    },
+    {
+      "step": 229,
+      "date": "2024-05-22",
+      "days_since_start": 1603,
+      "mean_reward": -199.4454707973674,
+      "mean_error_km": 551.7074362387352,
+      "epsilon": 0.8913405089533699,
+      "samples": 20
+    },
+    {
+      "step": 230,
+      "date": "2024-05-29",
+      "days_since_start": 1610,
+      "mean_reward": -102.02889749806619,
+      "mean_error_km": 563.2231672185092,
+      "epsilon": 0.8908948386988933,
+      "samples": 20
+    },
+    {
+      "step": 231,
+      "date": "2024-06-05",
+      "days_since_start": 1617,
+      "mean_reward": -68.40043938775982,
+      "mean_error_km": 351.7157473975212,
+      "epsilon": 0.8904493912795439,
+      "samples": 20
+    },
+    {
+      "step": 232,
+      "date": "2024-06-12",
+      "days_since_start": 1624,
+      "mean_reward": -585.6278448809137,
+      "mean_error_km": 1520.8606243532327,
+      "epsilon": 0.8900041665839042,
+      "samples": 20
+    },
+    {
+      "step": 233,
+      "date": "2024-06-19",
+      "days_since_start": 1631,
+      "mean_reward": -237.41008538246564,
+      "mean_error_km": 640.2321119438175,
+      "epsilon": 0.8895591645006123,
+      "samples": 20
+    },
+    {
+      "step": 234,
+      "date": "2024-06-26",
+      "days_since_start": 1638,
+      "mean_reward": -105.86455292113101,
+      "mean_error_km": 545.3962103252578,
+      "epsilon": 0.889114384918362,
+      "samples": 20
+    },
+    {
+      "step": 235,
+      "date": "2024-07-03",
+      "days_since_start": 1645,
+      "mean_reward": -112.86862967218875,
+      "mean_error_km": 454.84385199365323,
+      "epsilon": 0.8886698277259029,
+      "samples": 20
+    },
+    {
+      "step": 236,
+      "date": "2024-07-10",
+      "days_since_start": 1652,
+      "mean_reward": -18.09593978866753,
+      "mean_error_km": 197.69432780123103,
+      "epsilon": 0.88822549281204,
+      "samples": 20
+    },
+    {
+      "step": 237,
+      "date": "2024-07-17",
+      "days_since_start": 1659,
+      "mean_reward": -23.579621551926884,
+      "mean_error_km": 149.38201556657117,
+      "epsilon": 0.887781380065634,
+      "samples": 20
+    },
+    {
+      "step": 238,
+      "date": "2024-07-24",
+      "days_since_start": 1666,
+      "mean_reward": -92.22769192211261,
+      "mean_error_km": 278.64294598927563,
+      "epsilon": 0.8873374893756012,
+      "samples": 20
+    },
+    {
+      "step": 239,
+      "date": "2024-07-31",
+      "days_since_start": 1673,
+      "mean_reward": -600.4654100146579,
+      "mean_error_km": 925.430363700015,
+      "epsilon": 0.8868938206309135,
+      "samples": 20
+    },
+    {
+      "step": 240,
+      "date": "2024-08-07",
+      "days_since_start": 1680,
+      "mean_reward": -5.5789637035707695,
+      "mean_error_km": 60.4144919786371,
+      "epsilon": 0.8864503737205981,
+      "samples": 20
+    },
+    {
+      "step": 241,
+      "date": "2024-08-14",
+      "days_since_start": 1687,
+      "mean_reward": -68.38068095834888,
+      "mean_error_km": 163.06127985614776,
+      "epsilon": 0.8860071485337379,
+      "samples": 20
+    },
+    {
+      "step": 242,
+      "date": "2024-08-21",
+      "days_since_start": 1694,
+      "mean_reward": -398.448638687821,
+      "mean_error_km": 1283.4889391006836,
+      "epsilon": 0.885564144959471,
+      "samples": 20
+    },
+    {
+      "step": 243,
+      "date": "2024-08-28",
+      "days_since_start": 1701,
+      "mean_reward": -15.682876734349051,
+      "mean_error_km": 70.73358538912484,
+      "epsilon": 0.8851213628869913,
+      "samples": 20
+    },
+    {
+      "step": 244,
+      "date": "2024-09-04",
+      "days_since_start": 1708,
+      "mean_reward": -727.4962114447733,
+      "mean_error_km": 1497.1665425684546,
+      "epsilon": 0.8846788022055478,
+      "samples": 20
+    },
+    {
+      "step": 245,
+      "date": "2024-09-11",
+      "days_since_start": 1715,
+      "mean_reward": -173.74762238201146,
+      "mean_error_km": 157.0194147848062,
+      "epsilon": 0.8842364628044451,
+      "samples": 20
+    },
+    {
+      "step": 246,
+      "date": "2024-09-18",
+      "days_since_start": 1722,
+      "mean_reward": -48.34324733401668,
+      "mean_error_km": 104.27240564769299,
+      "epsilon": 0.883794344573043,
+      "samples": 20
+    },
+    {
+      "step": 247,
+      "date": "2024-09-25",
+      "days_since_start": 1729,
+      "mean_reward": -1162.2341008756944,
+      "mean_error_km": 703.2177416168813,
+      "epsilon": 0.8833524474007565,
+      "samples": 20
+    },
+    {
+      "step": 248,
+      "date": "2024-10-02",
+      "days_since_start": 1736,
+      "mean_reward": -312.6129302680985,
+      "mean_error_km": 335.35679162053884,
+      "epsilon": 0.8829107711770562,
+      "samples": 20
+    },
+    {
+      "step": 249,
+      "date": "2024-10-09",
+      "days_since_start": 1743,
+      "mean_reward": -139.19810658908824,
+      "mean_error_km": 1226.0483319863222,
+      "epsilon": 0.8824693157914677,
+      "samples": 20
+    },
+    {
+      "step": 250,
+      "date": "2024-10-16",
+      "days_since_start": 1750,
+      "mean_reward": -3.2402045086469657,
+      "mean_error_km": 68.75618077018555,
+      "epsilon": 0.882028081133572,
+      "samples": 20
+    },
+    {
+      "step": 251,
+      "date": "2024-10-23",
+      "days_since_start": 1757,
+      "mean_reward": -113.88821679474958,
+      "mean_error_km": 463.540958280338,
+      "epsilon": 0.8815870670930053,
+      "samples": 20
+    },
+    {
+      "step": 252,
+      "date": "2024-10-30",
+      "days_since_start": 1764,
+      "mean_reward": -83.52984223481329,
+      "mean_error_km": 564.9559899286311,
+      "epsilon": 0.8811462735594588,
+      "samples": 20
+    },
+    {
+      "step": 253,
+      "date": "2024-11-06",
+      "days_since_start": 1771,
+      "mean_reward": -199.10211872628867,
+      "mean_error_km": 484.33078595754216,
+      "epsilon": 0.8807057004226791,
+      "samples": 20
+    },
+    {
+      "step": 254,
+      "date": "2024-11-13",
+      "days_since_start": 1778,
+      "mean_reward": -298.8811086680806,
+      "mean_error_km": 1414.3066905922574,
+      "epsilon": 0.8802653475724679,
+      "samples": 20
+    },
+    {
+      "step": 255,
+      "date": "2024-11-20",
+      "days_since_start": 1785,
+      "mean_reward": -4.833509050515699,
+      "mean_error_km": 28.821693194432424,
+      "epsilon": 0.8798252148986817,
+      "samples": 20
+    },
+    {
+      "step": 256,
+      "date": "2024-11-27",
+      "days_since_start": 1792,
+      "mean_reward": -679.9457988462848,
+      "mean_error_km": 1479.6703697689231,
+      "epsilon": 0.8793853022912325,
+      "samples": 20
+    },
+    {
+      "step": 257,
+      "date": "2024-12-04",
+      "days_since_start": 1799,
+      "mean_reward": -349.77018251331737,
+      "mean_error_km": 1502.5112156641226,
+      "epsilon": 0.8789456096400869,
+      "samples": 20
+    },
+    {
+      "step": 258,
+      "date": "2024-12-11",
+      "days_since_start": 1806,
+      "mean_reward": -4.037451615090727,
+      "mean_error_km": 34.117710917836575,
+      "epsilon": 0.8785061368352669,
+      "samples": 20
+    },
+    {
+      "step": 259,
+      "date": "2024-12-18",
+      "days_since_start": 1813,
+      "mean_reward": -343.6609937633751,
+      "mean_error_km": 879.3458813554714,
+      "epsilon": 0.8780668837668493,
+      "samples": 20
+    },
+    {
+      "step": 260,
+      "date": "2024-12-25",
+      "days_since_start": 1820,
+      "mean_reward": 0.0,
+      "mean_error_km": 0.0,
+      "epsilon": 0.8776278503249659,
+      "samples": 20
+    },
+    {
+      "step": 261,
+      "date": "2025-01-01",
+      "days_since_start": 1827,
+      "mean_reward": -405.9599423595157,
+      "mean_error_km": 637.1723498299305,
+      "epsilon": 0.8771890363998035,
+      "samples": 20
+    },
+    {
+      "step": 262,
+      "date": "2025-01-08",
+      "days_since_start": 1834,
+      "mean_reward": -20.770340262593074,
+      "mean_error_km": 43.33994516531069,
+      "epsilon": 0.8767504418816037,
+      "samples": 20
+    },
+    {
+      "step": 263,
+      "date": "2025-01-15",
+      "days_since_start": 1841,
+      "mean_reward": -45.79841765988051,
+      "mean_error_km": 100.03118657687209,
+      "epsilon": 0.876312066660663,
+      "samples": 20
+    },
+    {
+      "step": 264,
+      "date": "2025-01-22",
+      "days_since_start": 1848,
+      "mean_reward": -9.69086163104728,
+      "mean_error_km": 91.48387267604357,
+      "epsilon": 0.8758739106273327,
+      "samples": 20
+    },
+    {
+      "step": 265,
+      "date": "2025-01-29",
+      "days_since_start": 1855,
+      "mean_reward": -34.46165551670796,
+      "mean_error_km": 57.19173911265962,
+      "epsilon": 0.8754359736720191,
+      "samples": 20
+    },
+    {
+      "step": 266,
+      "date": "2025-02-05",
+      "days_since_start": 1862,
+      "mean_reward": -112.77503118848756,
+      "mean_error_km": 299.60056889208147,
+      "epsilon": 0.8749982556851831,
+      "samples": 20
+    },
+    {
+      "step": 267,
+      "date": "2025-02-12",
+      "days_since_start": 1869,
+      "mean_reward": -7.8132488643400055,
+      "mean_error_km": 58.13710757872959,
+      "epsilon": 0.8745607565573406,
+      "samples": 20
+    },
+    {
+      "step": 268,
+      "date": "2025-02-19",
+      "days_since_start": 1876,
+      "mean_reward": -552.7792883858555,
+      "mean_error_km": 1602.3269747223342,
+      "epsilon": 0.8741234761790619,
+      "samples": 20
+    },
+    {
+      "step": 269,
+      "date": "2025-02-26",
+      "days_since_start": 1883,
+      "mean_reward": -59.88980627678812,
+      "mean_error_km": 481.3663444627027,
+      "epsilon": 0.8736864144409725,
+      "samples": 20
+    },
+    {
+      "step": 270,
+      "date": "2025-03-05",
+      "days_since_start": 1890,
+      "mean_reward": -403.4755260067372,
+      "mean_error_km": 832.1069717835608,
+      "epsilon": 0.873249571233752,
+      "samples": 20
+    },
+    {
+      "step": 271,
+      "date": "2025-03-12",
+      "days_since_start": 1897,
+      "mean_reward": -90.54389536460988,
+      "mean_error_km": 224.4181314056164,
+      "epsilon": 0.8728129464481352,
+      "samples": 20
+    },
+    {
+      "step": 272,
+      "date": "2025-03-19",
+      "days_since_start": 1904,
+      "mean_reward": -560.1047359802913,
+      "mean_error_km": 1572.5274273756916,
+      "epsilon": 0.8723765399749112,
+      "samples": 20
+    },
+    {
+      "step": 273,
+      "date": "2025-03-26",
+      "days_since_start": 1911,
+      "mean_reward": -43.61617685474447,
+      "mean_error_km": 87.68048482097807,
+      "epsilon": 0.8719403517049238,
+      "samples": 20
+    },
+    {
+      "step": 274,
+      "date": "2025-04-02",
+      "days_since_start": 1918,
+      "mean_reward": -52.756929776238245,
+      "mean_error_km": 131.50088697615288,
+      "epsilon": 0.8715043815290714,
+      "samples": 20
+    },
+    {
+      "step": 275,
+      "date": "2025-04-09",
+      "days_since_start": 1925,
+      "mean_reward": -107.23219813555272,
+      "mean_error_km": 380.94606677720725,
+      "epsilon": 0.8710686293383069,
+      "samples": 20
+    },
+    {
+      "step": 276,
+      "date": "2025-04-16",
+      "days_since_start": 1932,
+      "mean_reward": -121.4857456726234,
+      "mean_error_km": 173.6476038891863,
+      "epsilon": 0.8706330950236377,
+      "samples": 20
+    },
+    {
+      "step": 277,
+      "date": "2025-04-23",
+      "days_since_start": 1939,
+      "mean_reward": -213.6364916072177,
+      "mean_error_km": 723.715279108223,
+      "epsilon": 0.870197778476126,
+      "samples": 20
+    },
+    {
+      "step": 278,
+      "date": "2025-04-30",
+      "days_since_start": 1946,
+      "mean_reward": -17.219658081351366,
+      "mean_error_km": 126.77048629390431,
+      "epsilon": 0.869762679586888,
+      "samples": 20
+    },
+    {
+      "step": 279,
+      "date": "2025-05-07",
+      "days_since_start": 1953,
+      "mean_reward": -222.0271469300385,
+      "mean_error_km": 971.7450870038725,
+      "epsilon": 0.8693277982470946,
+      "samples": 20
+    },
+    {
+      "step": 280,
+      "date": "2025-05-14",
+      "days_since_start": 1960,
+      "mean_reward": -100.15518439058302,
+      "mean_error_km": 91.2308648744923,
+      "epsilon": 0.8688931343479711,
+      "samples": 20
+    },
+    {
+      "step": 281,
+      "date": "2025-05-21",
+      "days_since_start": 1967,
+      "mean_reward": -125.53851894312174,
+      "mean_error_km": 863.5126404897052,
+      "epsilon": 0.8684586877807972,
+      "samples": 20
+    },
+    {
+      "step": 282,
+      "date": "2025-05-28",
+      "days_since_start": 1974,
+      "mean_reward": -111.63859902782508,
+      "mean_error_km": 202.2664612239094,
+      "epsilon": 0.8680244584369068,
+      "samples": 20
+    },
+    {
+      "step": 283,
+      "date": "2025-06-04",
+      "days_since_start": 1981,
+      "mean_reward": -385.9633449207948,
+      "mean_error_km": 983.7778972826807,
+      "epsilon": 0.8675904462076884,
+      "samples": 20
+    },
+    {
+      "step": 284,
+      "date": "2025-06-11",
+      "days_since_start": 1988,
+      "mean_reward": -448.3450611263459,
+      "mean_error_km": 880.272444767741,
+      "epsilon": 0.8671566509845846,
+      "samples": 20
+    },
+    {
+      "step": 285,
+      "date": "2025-06-18",
+      "days_since_start": 1995,
+      "mean_reward": -509.0774397768706,
+      "mean_error_km": 461.7393781348504,
+      "epsilon": 0.8667230726590923,
+      "samples": 20
+    },
+    {
+      "step": 286,
+      "date": "2025-06-25",
+      "days_since_start": 2002,
+      "mean_reward": -101.60779294084003,
+      "mean_error_km": 562.5873712444399,
+      "epsilon": 0.8662897111227629,
+      "samples": 20
+    },
+    {
+      "step": 287,
+      "date": "2025-07-02",
+      "days_since_start": 2009,
+      "mean_reward": -130.8903400186769,
+      "mean_error_km": 239.30374294543944,
+      "epsilon": 0.8658565662672015,
+      "samples": 20
+    },
+    {
+      "step": 288,
+      "date": "2025-07-09",
+      "days_since_start": 2016,
+      "mean_reward": -239.48581886900266,
+      "mean_error_km": 278.64848133988073,
+      "epsilon": 0.865423637984068,
+      "samples": 20
+    },
+    {
+      "step": 289,
+      "date": "2025-07-16",
+      "days_since_start": 2023,
+      "mean_reward": -313.61421362186456,
+      "mean_error_km": 260.66303978863,
+      "epsilon": 0.864990926165076,
+      "samples": 20
+    },
+    {
+      "step": 290,
+      "date": "2025-07-23",
+      "days_since_start": 2030,
+      "mean_reward": -135.7362183975429,
+      "mean_error_km": 157.57198259775114,
+      "epsilon": 0.8645584307019936,
+      "samples": 20
+    },
+    {
+      "step": 291,
+      "date": "2025-07-30",
+      "days_since_start": 2037,
+      "mean_reward": -98.01146664394366,
+      "mean_error_km": 140.53266902645078,
+      "epsilon": 0.8641261514866426,
+      "samples": 20
+    },
+    {
+      "step": 292,
+      "date": "2025-08-06",
+      "days_since_start": 2044,
+      "mean_reward": -10.82334722290187,
+      "mean_error_km": 116.11955815862402,
+      "epsilon": 0.8636940884108993,
+      "samples": 20
+    },
+    {
+      "step": 293,
+      "date": "2025-08-13",
+      "days_since_start": 2051,
+      "mean_reward": 0.0,
+      "mean_error_km": 0.0,
+      "epsilon": 0.8632622413666939,
+      "samples": 20
+    },
+    {
+      "step": 294,
+      "date": "2025-08-20",
+      "days_since_start": 2058,
+      "mean_reward": -21.560988501321106,
+      "mean_error_km": 105.74432232919398,
+      "epsilon": 0.8628306102460106,
+      "samples": 20
+    },
+    {
+      "step": 295,
+      "date": "2025-08-27",
+      "days_since_start": 2065,
+      "mean_reward": -276.917590432142,
+      "mean_error_km": 1284.7499226930465,
+      "epsilon": 0.8623991949408877,
+      "samples": 20
+    },
+    {
+      "step": 296,
+      "date": "2025-09-03",
+      "days_since_start": 2072,
+      "mean_reward": -311.14286369975787,
+      "mean_error_km": 1635.6815418410563,
+      "epsilon": 0.8619679953434173,
+      "samples": 20
+    },
+    {
+      "step": 297,
+      "date": "2025-09-10",
+      "days_since_start": 2079,
+      "mean_reward": -77.77340507543019,
+      "mean_error_km": 24.007305816087143,
+      "epsilon": 0.8615370113457457,
+      "samples": 20
+    },
+    {
+      "step": 298,
+      "date": "2025-09-17",
+      "days_since_start": 2086,
+      "mean_reward": -178.61160983799718,
+      "mean_error_km": 89.35447070397025,
+      "epsilon": 0.8611062428400729,
+      "samples": 20
+    },
+    {
+      "step": 299,
+      "date": "2025-09-24",
+      "days_since_start": 2093,
+      "mean_reward": -394.86270445011456,
+      "mean_error_km": 293.14590768649407,
+      "epsilon": 0.8606756897186528,
+      "samples": 20
+    },
+    {
+      "step": 300,
+      "date": "2025-10-01",
+      "days_since_start": 2100,
+      "mean_reward": -23.391158433012855,
+      "mean_error_km": 205.807287855664,
+      "epsilon": 0.8602453518737936,
+      "samples": 20
+    }
+  ]
+}
