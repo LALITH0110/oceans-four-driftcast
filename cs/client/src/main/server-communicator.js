@@ -10,7 +10,7 @@ const store = new Store();
 
 class ServerCommunicator {
     constructor() {
-        this.serverUrl = 'http://localhost:8000'; // Local testing
+        this.serverUrl = 'http://system80.rice.iit.edu:8000'; // Cloud server
         this.wsUrl = this.serverUrl.replace('http', 'ws');
         this.clientId = null;
         this.token = null;
