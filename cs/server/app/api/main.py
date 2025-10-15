@@ -183,13 +183,21 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 result_data_hex = data.get("result_data", "")
                 execution_time = data.get("execution_time", 0)
                 
+                logger.info(f"Received task_completed for task {task_id} from client {client_id} (execution time: {execution_time}s)")
+                
                 # Convert hex back to bytes
                 try:
                     result_data = bytes.fromhex(result_data_hex)
                 except ValueError:
+                    logger.warning(f"Could not decode hex result data, using raw encoding")
                     result_data = result_data_hex.encode()
                 
                 success = await task_scheduler.complete_task(task_id, client_id, result_data)
+                
+                if success:
+                    logger.info(f"✓ Task {task_id} marked as completed successfully")
+                else:
+                    logger.error(f"✗ Failed to mark task {task_id} as completed")
                 
                 # Store result in database
                 if success:
@@ -206,12 +214,14 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         )
                         session.add(task_result)
                         await session.commit()
+                        logger.info(f"Stored result for task {task_id} in database")
                         break
                 
                 await connection_manager.send_personal_message(
                     {"type": "task_completion_ack", "task_id": task_id, "success": success},
                     client_id
                 )
+                logger.debug(f"Sent task_completion_ack to client {client_id}")
             
             elif message_type == "task_failed":
                 # Client failed to complete task

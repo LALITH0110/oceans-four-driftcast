@@ -309,3 +309,45 @@ async def health_check():
             "timestamp": datetime.utcnow(),
             "error": str(e)
         }
+
+@router.get("/debug/active-tasks")
+async def debug_active_tasks():
+    """Get detailed information about active tasks (for debugging)"""
+    try:
+        active_tasks_info = []
+        
+        for task_id, work_unit in task_scheduler.active_tasks.items():
+            active_tasks_info.append({
+                "task_id": task_id,
+                "simulation_id": work_unit.simulation_id,
+                "particle_count": work_unit.particle_count,
+                "assigned_client": work_unit.assigned_client,
+                "assigned_at": work_unit.assigned_at.isoformat() if work_unit.assigned_at else None,
+                "deadline": work_unit.deadline.isoformat(),
+                "retry_count": work_unit.retry_count,
+                "priority": work_unit.priority,
+                "age_seconds": (datetime.utcnow() - work_unit.assigned_at).total_seconds() if work_unit.assigned_at else None
+            })
+        
+        # Group by client
+        by_client = {}
+        for info in active_tasks_info:
+            client_id = info["assigned_client"]
+            if client_id not in by_client:
+                by_client[client_id] = []
+            by_client[client_id].append(info)
+        
+        return {
+            "total_active_tasks": len(active_tasks_info),
+            "tasks_by_client": by_client,
+            "all_tasks": active_tasks_info,
+            "queue_size": task_scheduler.work_queue.qsize(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting active tasks debug info: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get debug information"
+        )

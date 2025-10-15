@@ -179,22 +179,24 @@ class TaskScheduler:
             # Check if client can handle more tasks
             client_task_count = await self._get_client_active_tasks(client_id)
             
-            logger.info(f"Client {client_id} has {client_task_count}/{self.max_tasks_per_client} tasks")
+            logger.info(f"Client {client_id} has {client_task_count}/{self.max_tasks_per_client} active tasks (total active: {len(self.active_tasks)})")
             
             if client_task_count >= self.max_tasks_per_client:
-                logger.info(f"Client {client_id} has reached max task limit")
+                logger.warning(f"Client {client_id} has reached max task limit ({client_task_count}/{self.max_tasks_per_client})")
+                logger.info(f"Active tasks for this client: {[tid for tid, wu in self.active_tasks.items() if wu.assigned_client == client_id]}")
                 return None
             
             # Get next available task
             queue_size = self.work_queue.qsize()
-            logger.info(f"Queue has {queue_size} tasks available")
+            logger.info(f"Queue has {queue_size} pending tasks available")
             
             if self.work_queue.empty():
-                logger.info("No tasks available in queue")
+                logger.info("No tasks available in queue, triggering batch creation")
+                asyncio.create_task(self._check_and_create_tasks())
                 return None
             
             work_unit = await self.work_queue.get()
-            logger.info(f"Retrieved task {work_unit.id} from queue")
+            logger.info(f"Retrieved task {work_unit.id} from queue (remaining in queue: {self.work_queue.qsize()})")
             
             # Prepare task data for client
             task_data = {
@@ -214,7 +216,7 @@ class TaskScheduler:
             # Add to active tasks tracking
             self.active_tasks[work_unit.id] = work_unit
             
-            logger.info(f"Successfully assigned task {work_unit.id} to client {client_id}")
+            logger.info(f"Successfully assigned task {work_unit.id} to client {client_id}. Active tasks now: {len(self.active_tasks)} (queue: {self.work_queue.qsize()})")
             return task_data
             
         except Exception as e:
@@ -225,15 +227,21 @@ class TaskScheduler:
         """Mark task as completed and process results"""
         try:
             if task_id not in self.active_tasks:
-                logger.warning(f"Task {task_id} not found in active tasks")
+                logger.warning(f"Task {task_id} not found in active tasks (client {client_id})")
+                logger.info(f"Active tasks: {list(self.active_tasks.keys())}")
                 return False
             
             work_unit = self.active_tasks.pop(task_id)
             
+            # Verify the task was assigned to this client
+            if work_unit.assigned_client != client_id:
+                logger.warning(f"Task {task_id} was assigned to {work_unit.assigned_client}, not {client_id}")
+                # Still mark as complete since we got a result
+            
             # Process and validate results
             await self._process_task_results(work_unit, client_id, result_data)
             
-            logger.info(f"Task {task_id} completed by client {client_id}")
+            logger.info(f"Task {task_id} completed by client {client_id}. Active tasks now: {len(self.active_tasks)}")
             
             # Trigger immediate queue check to create new tasks if needed
             asyncio.create_task(self._check_and_create_tasks())
@@ -346,18 +354,20 @@ class TaskScheduler:
             # Calculate total client capacity
             total_client_capacity = active_clients * self.max_tasks_per_client
             
-            logger.info(f"Queue status: {queue_size} pending, {active_tasks} active, {active_clients} clients, capacity: {total_client_capacity}")
+            logger.info(f"Queue check - Pending: {queue_size}, Active: {active_tasks}, Clients: {active_clients}, Capacity: {total_client_capacity}")
             
             # Create new tasks if we're below the minimum pending tasks and have clients
             if queue_size < self.min_pending_tasks and active_clients > 0:
+                # Calculate how many tasks to create to reach target
                 tasks_to_create = self.target_pending_tasks - queue_size
                 
                 if tasks_to_create > 0:
-                    logger.info(f"Creating {tasks_to_create} new tasks (queue: {queue_size}, active: {active_tasks}, capacity: {total_client_capacity})")
+                    logger.info(f"Queue below minimum ({queue_size} < {self.min_pending_tasks}). Creating {tasks_to_create} new tasks to reach target {self.target_pending_tasks}")
                     
+                    # Create batch - particles_per_task is 10, so we multiply by 10
                     await self.create_simulation_batch(
-                        name=f"Auto Batch {datetime.utcnow().strftime('%H:%M:%S')}",
-                        particle_count=tasks_to_create * 5,  # 5 particles per task
+                        name=f"Auto Batch {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
+                        particle_count=tasks_to_create * 10,  # 10 particles per task
                         time_horizon=1,
                         spatial_bounds={
                             "min_lat": 25.0,
@@ -372,7 +382,14 @@ class TaskScheduler:
                             "auto_created": True
                         }
                     )
-                    logger.info(f"Auto-created batch with {tasks_to_create} tasks")
+                    logger.info(f"✓ Auto-created batch with {tasks_to_create} tasks. New queue size: {self.work_queue.qsize()}")
+                else:
+                    logger.debug(f"Queue size OK: {queue_size} >= {self.min_pending_tasks}")
+            else:
+                if active_clients == 0:
+                    logger.debug("No active clients, skipping task creation")
+                else:
+                    logger.debug(f"Queue size sufficient: {queue_size} >= {self.min_pending_tasks}")
                     
         except Exception as e:
             logger.error(f"Error checking and creating tasks: {e}")
