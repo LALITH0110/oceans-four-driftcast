@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (internal only)
   postgres:
     image: postgres:15-alpine
     container_name: ocean-forecast-db
@@ -12,8 +12,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./server/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    ports:
-      - "5433:5432"
+    # ❌ remove host publishing
+    # ports:
+    #   - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ocean_user -d ocean_forecast"]
       interval: 10s
@@ -21,12 +22,13 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Redis for caching and Celery broker
+  # Redis (internal only)
   redis:
     image: redis:7-alpine
     container_name: ocean-forecast-redis
-    ports:
-      - "6379:6379"
+    # ❌ remove host publishing
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -36,7 +38,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # FastAPI Application
+  # FastAPI Application (internal only)
   api:
     build:
       context: ./server
@@ -50,9 +52,13 @@ services:
       - SECRET_KEY=your-secret-key-change-in-production
       - DEBUG=false
       - LOG_LEVEL=INFO
-    ports:
-      - "8000:8000"
-      - "8001:8001"  # Metrics port
+      # Optional: keep if your app reads these
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    # ❌ remove host publishing (nginx will proxy internally)
+    # ports:
+    #   - "8000:8000"
+    #   - "8001:8001"
     volumes:
       - ./server/logs:/app/logs
     depends_on:
@@ -67,7 +73,7 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Celery Worker
+  # Celery Worker (internal only)
   celery-worker:
     build:
       context: ./server
@@ -91,7 +97,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Celery Beat (Task Scheduler)
+  # Celery Beat (internal only)
   celery-beat:
     build:
       context: ./server
@@ -115,12 +121,14 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Prometheus for metrics collection
+  # Prometheus (internal only; enable via profile + SSH tunnel)
   prometheus:
     image: prom/prometheus:latest
     container_name: ocean-forecast-prometheus
-    ports:
-      - "9090:9090"
+    profiles: ["obs"]   # start only when explicitly requested
+    # ❌ remove host publishing
+    # ports:
+    #   - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -133,12 +141,14 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
 
-  # Grafana for visualization
+  # Grafana (internal only; enable via profile + SSH tunnel)
   grafana:
     image: grafana/grafana:latest
     container_name: ocean-forecast-grafana
-    ports:
-      - "3000:3000"
+    profiles: ["obs"]   # start only when explicitly requested
+    # ❌ remove host publishing
+    # ports:
+    #   - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -147,16 +157,17 @@ services:
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     restart: unless-stopped
 
-  # Nginx reverse proxy
+  # Nginx reverse proxy (single public entry point)
   nginx:
     image: nginx:alpine
     container_name: ocean-forecast-nginx
     ports:
-      - "80:80"
+      # ✅ only HTTPS is exposed to host
       - "443:443"
+      # (optional) if security later allows 80→443 redirect, add "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - api
     restart: unless-stopped
