@@ -10,8 +10,12 @@ const store = new Store();
 
 class ServerCommunicator {
     constructor() {
-        this.serverUrl = 'http://system80.rice.iit.edu:8000'; // Cloud server
-        this.wsUrl = this.serverUrl.replace('http', 'ws');
+        // Local development
+        this.serverUrl = 'http://localhost:8000'; // Local server
+        // Production (uncomment for deployment)
+        // this.serverUrl = 'https://system80.rice.iit.edu';
+        
+        this.wsUrl = this.serverUrl.replace('http', 'ws').replace('https', 'wss');
         this.clientId = null;
         this.token = null;
         this.websocket = null;
