@@ -1,0 +1,198 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - INTERNAL ONLY (no external port exposure)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ocean-forecast-db-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ocean_forecast}
+      POSTGRES_USER: ${POSTGRES_USER:-ocean_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ocean_user} -d ${POSTGRES_DB:-ocean_forecast}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Redis for caching and Celery broker - INTERNAL ONLY
+  redis:
+    image: redis:7-alpine
+    container_name: ocean-forecast-redis-prod
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # FastAPI Application - PRODUCTION MODE (internal only)
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ocean-forecast-api-prod
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ocean_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ocean_forecast}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=production
+      - SERVER_HOST=${SERVER_HOST:-system80.rice.iit.edu}
+    expose:
+      - "8000"
+      - "8001"
+    volumes:
+      - ./server/logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Celery Worker for background tasks
+  celery-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ocean-forecast-worker-prod
+    command: celery -A app.scheduler.task_manager.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=4
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ocean_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ocean_forecast}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./server/logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Celery Beat (Task Scheduler)
+  celery-beat:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ocean-forecast-beat-prod
+    command: celery -A app.scheduler.task_manager.celery_app beat --loglevel=${LOG_LEVEL:-info}
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ocean_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ocean_forecast}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./server/logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Prometheus for metrics collection - INTERNAL ONLY
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ocean-forecast-prometheus-prod
+    expose:
+      - "9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Grafana for visualization - INTERNAL ONLY
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ocean-forecast-grafana-prod
+    expose:
+      - "3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SERVER_ROOT_URL=https://${SERVER_HOST:-system80.rice.iit.edu}/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+  # Nginx reverse proxy - PRODUCTION ONLY (port 443)
+  nginx:
+    image: nginx:alpine
+    container_name: ocean-forecast-nginx-prod
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+      - prometheus
+      - grafana
+    restart: unless-stopped
+    networks:
+      - ocean-network
+
+volumes:
+  postgres_data:
+    name: ocean_forecast_postgres_prod
+  redis_data:
+    name: ocean_forecast_redis_prod
+  prometheus_data:
+    name: ocean_forecast_prometheus_prod
+  grafana_data:
+    name: ocean_forecast_grafana_prod
+
+networks:
+  ocean-network:
+    name: ocean-forecast-network-prod
+    driver: bridge

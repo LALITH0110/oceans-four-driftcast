@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ocean-forecast
+  labels:
+    name: ocean-forecast
+    app: ocean-plastic-forecast

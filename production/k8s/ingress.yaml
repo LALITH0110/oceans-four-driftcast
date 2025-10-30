@@ -1,0 +1,91 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ocean-forecast-ingress
+  namespace: default
+  annotations:
+    # Nginx Ingress Controller annotations
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: "ocean-forecast-api-service"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+
+    # CORS headers (if needed)
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://system80.rice.iit.edu"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - system80.rice.iit.edu
+      secretName: ocean-forecast-tls-secret
+
+  rules:
+    - host: system80.rice.iit.edu
+      http:
+        paths:
+          # API endpoints
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: ocean-forecast-api-service
+                port:
+                  number: 8000
+
+          # WebSocket endpoint
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: ocean-forecast-api-service
+                port:
+                  number: 8000
+
+          # Health check
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: ocean-forecast-api-service
+                port:
+                  number: 8000
+
+          # Prometheus (optional - can restrict with auth)
+          - path: /prometheus
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-service
+                port:
+                  number: 9090
+
+          # Grafana (optional - can restrict with auth)
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
+
+---
+# TLS Secret (create this with your SSL certificates)
+# kubectl create secret tls ocean-forecast-tls-secret \
+#   --cert=path/to/cert.pem \
+#   --key=path/to/key.pem \
+#   --namespace=default
