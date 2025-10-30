@@ -194,13 +194,25 @@ class OceanDriftGuardian {
         ipcRenderer.on('status-update', (event, status) => {
             this.updateStatus(status);
         });
-        
+
         ipcRenderer.on('task-assigned', (event, task) => {
             this.handleTaskAssignment(task);
         });
-        
+
         ipcRenderer.on('achievement-unlocked', (event, achievement) => {
             this.showAchievementNotification(achievement);
+        });
+
+        ipcRenderer.on('processing-paused', () => {
+            this.state.isPaused = true;
+            this.elements.pauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Resume</span>';
+            this.elements.pauseBtn.classList.add('active');
+        });
+
+        ipcRenderer.on('processing-resumed', () => {
+            this.state.isPaused = false;
+            this.elements.pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+            this.elements.pauseBtn.classList.remove('active');
         });
     }
     
@@ -416,28 +428,32 @@ class OceanDriftGuardian {
     
     updateResourceUsage(sysInfo) {
         if (sysInfo.cpu) {
-            const cpuUsage = sysInfo.cpu.usage || 0;
+            // Show 0% CPU usage when paused
+            const cpuUsage = this.state.isPaused ? 0 : (sysInfo.cpu.usage || 0);
             this.elements.cpuUsageFill.style.width = cpuUsage + '%';
             this.elements.cpuUsageText.textContent = cpuUsage.toFixed(0) + '%';
-            
+
             // Change color based on usage
             if (cpuUsage > 80) {
                 this.elements.cpuUsageFill.style.background = 'var(--error)';
             } else if (cpuUsage > 50) {
                 this.elements.cpuUsageFill.style.background = 'var(--warning)';
+            } else {
+                // Reset to default color when usage is low
+                this.elements.cpuUsageFill.style.background = '';
             }
         }
-        
+
         if (sysInfo.memory) {
             const memUsage = sysInfo.memory.usagePercent || 0;
             const memUsedMB = sysInfo.memory.used ? (sysInfo.memory.used / (1024 * 1024)).toFixed(0) : 0;
-            
+
             this.elements.memoryUsageFill.style.width = memUsage + '%';
             this.elements.memoryUsageText.textContent = `${memUsedMB} MB`;
         }
-        
-        // Simulate network activity
-        if (this.state.currentTask) {
+
+        // Simulate network activity - show idle when paused
+        if (this.state.currentTask && !this.state.isPaused) {
             this.elements.networkActivity.textContent = 'Active';
             this.elements.networkIndicator.querySelectorAll('.network-dot').forEach((dot, i) => {
                 setTimeout(() => {
@@ -469,17 +485,26 @@ class OceanDriftGuardian {
         // Increment computing time and user points every second
         if (this.liveInterval) return;
         this.liveInterval = setInterval(() => {
-            // Always count computing time while app is open
-            this.state.totalTime += 1;
-            this.updateQuickStats();
+            // Only count computing time and points when NOT paused
+            if (!this.state.isPaused) {
+                this.state.totalTime += 1;
+                this.updateQuickStats();
 
-            // Increment personal leaderboard points like a counter
-            this.state.userPoints += 1; // +1 point per second
-            const youScoreEl = document.querySelector('.leaderboard-item.you .leaderboard-score');
-            if (youScoreEl) {
-                youScoreEl.textContent = this.formatNumber(this.state.userPoints);
+                // Increment personal leaderboard points like a counter
+                this.state.userPoints += 1; // +1 point per second
+                const youScoreEl = document.querySelector('.leaderboard-item.you .leaderboard-score');
+                if (youScoreEl) {
+                    youScoreEl.textContent = this.formatNumber(this.state.userPoints);
+                }
             }
         }, 1000);
+    }
+
+    stopLiveCounters() {
+        if (this.liveInterval) {
+            clearInterval(this.liveInterval);
+            this.liveInterval = null;
+        }
     }
 
     formatNumber(n) {

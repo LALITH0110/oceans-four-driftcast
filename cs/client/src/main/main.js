@@ -212,13 +212,21 @@ class OceanForecastApp {
         });
         
         // Handle pause/resume
-        ipcMain.handle('pause-processing', () => {
-            this.taskManager.pause();
+        ipcMain.handle('pause-processing', async () => {
+            await this.taskManager.pause();
+            // Notify renderer about pause state
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('processing-paused');
+            }
             return { success: true };
         });
-        
+
         ipcMain.handle('resume-processing', () => {
             this.taskManager.resume();
+            // Notify renderer about resume state
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('processing-resumed');
+            }
             return { success: true };
         });
     }

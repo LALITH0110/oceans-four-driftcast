@@ -110,14 +110,27 @@ class TaskManager {
         log.info('Task manager stopped');
     }
     
-    pause() {
+    async pause() {
         this.isPaused = true;
         log.info('Task processing paused');
+
+        // Cancel all active tasks to free up CPU
+        const activeTaskIds = Array.from(this.activeTasks.keys());
+        for (const taskId of activeTaskIds) {
+            await this.cancelTask(taskId, 'paused');
+        }
+
+        log.info(`Cancelled ${activeTaskIds.length} active tasks`);
     }
-    
+
     resume() {
         this.isPaused = false;
         log.info('Task processing resumed');
+
+        // Immediately request new tasks after resuming
+        if (this.activeTasks.size < this.maxConcurrentTasks) {
+            setTimeout(() => this.requestTask(), 100);
+        }
     }
     
     async requestTask() {
