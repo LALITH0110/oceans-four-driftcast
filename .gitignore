@@ -1,0 +1,6 @@
+# Ignore Node.js dependencies
+cs/client/node_modules/
+
+# Ignore macOS system files
+.DS_Store
+*/.DS_Store

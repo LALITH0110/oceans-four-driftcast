@@ -246,6 +246,32 @@ class OceanForecastApp {
             }
         }
         
+        // Auto-register if not registered yet
+        if (!this.isRegistered) {
+            try {
+                log.info('No existing credentials. Attempting auto-registration...');
+                const systemInfo = await this.systemMonitor.getSystemInfo();
+                const autoClientData = {
+                    name: `Client-${require('os').hostname()}`,
+                    publicKey: `PK_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+                    capabilities: systemInfo?.capabilities || {},
+                    systemInfo: systemInfo || {}
+                };
+                const result = await this.serverCommunicator.registerClient(autoClientData);
+                if (result?.success) {
+                    this.isRegistered = true;
+                    store.set('clientId', result.clientId);
+                    store.set('token', result.token);
+                    await this.taskManager.start();
+                    log.info('Auto-registration succeeded, task manager started');
+                } else {
+                    log.warn(`Auto-registration failed: ${result?.error || 'unknown error'}`);
+                }
+            } catch (e) {
+                log.error('Auto-registration error:', e);
+            }
+        }
+        
         // Start system monitoring
         this.systemMonitor.start();
         

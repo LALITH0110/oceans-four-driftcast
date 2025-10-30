@@ -13,6 +13,7 @@ class OceanDriftGuardian {
             userEmail: '',
             totalTasks: 0,
             totalTime: 0,
+            userPoints: 0,
             achievements: [],
             currentTask: null
         };
@@ -25,6 +26,7 @@ class OceanDriftGuardian {
         this.setupEventListeners();
         this.loadSettings();
         this.startAnimations();
+        this.startLiveCounters();
     }
     
     initializeUI() {
@@ -461,6 +463,31 @@ class OceanDriftGuardian {
         // Update achievements
         const achievementCount = document.querySelectorAll('.achievement.unlocked').length;
         this.elements.achievementsCount.textContent = achievementCount;
+    }
+
+    startLiveCounters() {
+        // Increment computing time and user points every second
+        if (this.liveInterval) return;
+        this.liveInterval = setInterval(() => {
+            // Always count computing time while app is open
+            this.state.totalTime += 1;
+            this.updateQuickStats();
+
+            // Increment personal leaderboard points like a counter
+            this.state.userPoints += 1; // +1 point per second
+            const youScoreEl = document.querySelector('.leaderboard-item.you .leaderboard-score');
+            if (youScoreEl) {
+                youScoreEl.textContent = this.formatNumber(this.state.userPoints);
+            }
+        }, 1000);
+    }
+
+    formatNumber(n) {
+        try {
+            return n.toLocaleString(undefined);
+        } catch (e) {
+            return String(n);
+        }
     }
     
     async toggleProcessing() {

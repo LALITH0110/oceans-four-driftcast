@@ -1098,17 +1098,41 @@ body {
 
 .input-group {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
 }
 
-.input-group input {
+.input-group input[type="number"] {
     flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-right: none;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    font-size: 1rem;
+    background: var(--bg-primary);
+    transition: all 0.2s ease;
+}
+
+.input-group input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
 }
 
 .input-addon {
-    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.875rem;
+    background: var(--bg-secondary);
     color: var(--text-secondary);
+    border: 2px solid #E5E7EB;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-left: none;
+    font-weight: 600;
 }
 
 /* Range Input Styling */
