@@ -1438,3 +1438,218 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .schedule-status.out-schedule i {
     color: var(--warning);
 }
+
+/* Achievements Modal Styles */
+.achievements-modal-content {
+    max-width: 900px;
+    max-height: 90vh;
+}
+
+.achievements-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.achievement-section {
+    margin-bottom: 2rem;
+}
+
+.achievement-section h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Tier System */
+.achievement-tiers {
+    display: grid;
+    gap: 1rem;
+}
+
+.achievement-tier {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--white);
+    border-radius: 12px;
+    border: 2px solid #E2E8F0;
+    transition: all 0.3s ease;
+}
+
+.achievement-tier:not(.locked) {
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+}
+
+.achievement-tier.locked {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+
+.tier-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.tier-info {
+    flex: 1;
+}
+
+.tier-info h5 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.tier-requirement {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.tier-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tier-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tier-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue), var(--ocean-teal));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.tier-progress-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Avatar Grid */
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+.avatar-option {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 3px solid #E2E8F0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background: var(--ocean-foam);
+    position: relative;
+}
+
+.avatar-option:hover:not(.locked) {
+    border-color: var(--primary-blue);
+    transform: scale(1.1);
+}
+
+.avatar-option.selected {
+    border-color: var(--success);
+    border-width: 4px;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.avatar-option.locked {
+    opacity: 0.4;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+.avatar-option .lock-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+}
+
+.avatar-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Task Achievements List */
+.achievements-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--white);
+    border-radius: 8px;
+    border: 2px solid #E2E8F0;
+    transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked {
+    border-color: var(--success);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+}
+
+.achievement-item.locked {
+    opacity: 0.7;
+}
+
+.achievement-icon {
+    font-size: 2rem;
+    color: var(--primary-blue);
+}
+
+.achievement-item.unlocked .achievement-icon {
+    color: var(--success);
+}
+
+.achievement-details {
+    flex: 1;
+}
+
+.achievement-details h5 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.achievement-details p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.achievement-progress-small {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.achievement-badge {
+    font-size: 1.5rem;
+}

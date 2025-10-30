@@ -19,8 +19,11 @@ class TaskManager {
             totalExecutionTime: 0,
             successRate: 0
         };
-        
+
         this.maxConcurrentTasks = 2; // Configurable
+        this.baseConcurrentTasks = 2; // Base value
+        this.turboConcurrentTasks = 4; // Turbo mode value
+        this.isTurboMode = false;
         this.taskTimeout = 30 * 60 * 1000; // 30 minutes
         
         // Cron job for periodic task requests
@@ -328,6 +331,20 @@ class TaskManager {
     setMaxConcurrentTasks(max) {
         this.maxConcurrentTasks = Math.max(1, Math.min(max, 10)); // Limit between 1-10
         log.info(`Max concurrent tasks set to ${this.maxConcurrentTasks}`);
+    }
+
+    setTurboMode(enabled) {
+        this.isTurboMode = enabled;
+        this.maxConcurrentTasks = enabled ? this.turboConcurrentTasks : this.baseConcurrentTasks;
+        log.info(`Turbo mode ${enabled ? 'enabled' : 'disabled'} - concurrent tasks: ${this.maxConcurrentTasks}`);
+
+        // If we enabled turbo and have capacity, request more tasks immediately
+        if (enabled && !this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
+            const tasksToRequest = this.maxConcurrentTasks - this.activeTasks.size;
+            for (let i = 0; i < tasksToRequest; i++) {
+                setTimeout(() => this.requestTask(), i * 200);
+            }
+        }
     }
     
     getActiveTasks() {

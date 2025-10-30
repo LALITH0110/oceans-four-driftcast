@@ -547,6 +547,158 @@
             </div>
         </main>
 
+        <!-- Achievements Modal -->
+        <div id="achievementsModal" class="modal hidden">
+            <div class="modal-content achievements-modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-trophy"></i> Your Achievements</h3>
+                    <button class="modal-close" id="closeAchievements">&times;</button>
+                </div>
+                <div class="modal-body achievements-body">
+                    <!-- Computing Time Tiers -->
+                    <div class="achievement-section">
+                        <h4><i class="fas fa-medal"></i> Contribution Tiers</h4>
+                        <div class="achievement-tiers">
+                            <div class="achievement-tier bronze" data-tier="bronze">
+                                <div class="tier-icon">🥉</div>
+                                <div class="tier-info">
+                                    <h5>Bronze Guardian</h5>
+                                    <p class="tier-requirement">1 hour computing time</p>
+                                    <div class="tier-progress">
+                                        <div class="tier-progress-bar">
+                                            <div class="tier-progress-fill" id="bronzeProgress"></div>
+                                        </div>
+                                        <span class="tier-progress-text" id="bronzeText">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="achievement-tier silver locked" data-tier="silver">
+                                <div class="tier-icon">🥈</div>
+                                <div class="tier-info">
+                                    <h5>Silver Guardian</h5>
+                                    <p class="tier-requirement">10 hours computing time</p>
+                                    <div class="tier-progress">
+                                        <div class="tier-progress-bar">
+                                            <div class="tier-progress-fill" id="silverProgress"></div>
+                                        </div>
+                                        <span class="tier-progress-text" id="silverText">Locked</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="achievement-tier gold locked" data-tier="gold">
+                                <div class="tier-icon">🥇</div>
+                                <div class="tier-info">
+                                    <h5>Gold Guardian</h5>
+                                    <p class="tier-requirement">1 week (168 hours)</p>
+                                    <div class="tier-progress">
+                                        <div class="tier-progress-bar">
+                                            <div class="tier-progress-fill" id="goldProgress"></div>
+                                        </div>
+                                        <span class="tier-progress-text" id="goldText">Locked</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="achievement-tier platinum locked" data-tier="platinum">
+                                <div class="tier-icon">💎</div>
+                                <div class="tier-info">
+                                    <h5>Platinum Guardian</h5>
+                                    <p class="tier-requirement">1 month (720 hours)</p>
+                                    <div class="tier-progress">
+                                        <div class="tier-progress-bar">
+                                            <div class="tier-progress-fill" id="platinumProgress"></div>
+                                        </div>
+                                        <span class="tier-progress-text" id="platinumText">Locked</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="achievement-tier diamond locked" data-tier="diamond">
+                                <div class="tier-icon">💠</div>
+                                <div class="tier-info">
+                                    <h5>Diamond Guardian</h5>
+                                    <p class="tier-requirement">3 months (2,160 hours)</p>
+                                    <div class="tier-progress">
+                                        <div class="tier-progress-bar">
+                                            <div class="tier-progress-fill" id="diamondProgress"></div>
+                                        </div>
+                                        <span class="tier-progress-text" id="diamondText">Locked</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Avatar Selection -->
+                    <div class="achievement-section">
+                        <h4><i class="fas fa-user-circle"></i> Ocean Avatars</h4>
+                        <p class="help-text">Unlock avatars by reaching new tiers!</p>
+                        <div class="avatar-grid" id="avatarGrid">
+                            <!-- Avatars will be generated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Task-based Achievements -->
+                    <div class="achievement-section">
+                        <h4><i class="fas fa-star"></i> Task Achievements</h4>
+                        <div class="achievements-list">
+                            <div class="achievement-item unlocked" data-id="first-task">
+                                <i class="fas fa-flag-checkered achievement-icon"></i>
+                                <div class="achievement-details">
+                                    <h5>First Wave</h5>
+                                    <p>Complete your first task</p>
+                                </div>
+                                <div class="achievement-badge">✓</div>
+                            </div>
+
+                            <div class="achievement-item locked" data-id="10-tasks">
+                                <i class="fas fa-chart-line achievement-icon"></i>
+                                <div class="achievement-details">
+                                    <h5>Rising Tide</h5>
+                                    <p>Complete 10 tasks</p>
+                                    <div class="achievement-progress-small">
+                                        <span id="tasks10Progress">0/10</span>
+                                    </div>
+                                </div>
+                                <div class="achievement-badge">🔒</div>
+                            </div>
+
+                            <div class="achievement-item locked" data-id="100-tasks">
+                                <i class="fas fa-fire achievement-icon"></i>
+                                <div class="achievement-details">
+                                    <h5>Ocean Warrior</h5>
+                                    <p>Complete 100 tasks</p>
+                                    <div class="achievement-progress-small">
+                                        <span id="tasks100Progress">0/100</span>
+                                    </div>
+                                </div>
+                                <div class="achievement-badge">🔒</div>
+                            </div>
+
+                            <div class="achievement-item locked" data-id="1000-tasks">
+                                <i class="fas fa-crown achievement-icon"></i>
+                                <div class="achievement-details">
+                                    <h5>Ocean Champion</h5>
+                                    <p>Complete 1,000 tasks</p>
+                                    <div class="achievement-progress-small">
+                                        <span id="tasks1000Progress">0/1000</span>
+                                    </div>
+                                </div>
+                                <div class="achievement-badge">🔒</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="closeAchievementsBtn">
+                        <i class="fas fa-check"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Floating Action Button -->
         <button class="fab hidden" id="fabHelp" title="Need help?">
             <i class="fas fa-question"></i>

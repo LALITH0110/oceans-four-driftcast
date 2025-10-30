@@ -230,6 +230,12 @@ class OceanForecastApp {
             }
             return { success: true };
         });
+
+        // Handle turbo mode toggle
+        ipcMain.handle('toggle-turbo-mode', (event, enabled) => {
+            this.taskManager.setTurboMode(enabled);
+            return { success: true };
+        });
     }
     
     async initializeComponents() {

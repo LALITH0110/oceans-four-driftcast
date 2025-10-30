@@ -15,7 +15,8 @@ class OceanDriftGuardian {
             totalTime: 0,
             userPoints: 0,
             achievements: [],
-            currentTask: null
+            currentTask: null,
+            selectedAvatar: '🌊' // Default avatar
         };
         
         this.settings = {};
@@ -123,7 +124,13 @@ class OceanDriftGuardian {
             presetClear: document.getElementById('presetClear'),
             
             // FAB
-            fabHelp: document.getElementById('fabHelp')
+            fabHelp: document.getElementById('fabHelp'),
+
+            // Achievements Modal
+            achievementsModal: document.getElementById('achievementsModal'),
+            closeAchievements: document.getElementById('closeAchievements'),
+            closeAchievementsBtn: document.getElementById('closeAchievementsBtn'),
+            avatarGrid: document.getElementById('avatarGrid')
         };
         
         this.addActivity('Welcome to Ocean Drift Guardian!', 'info');
@@ -252,7 +259,22 @@ class OceanDriftGuardian {
         
         // Achievements
         document.getElementById('viewAllAchievements').addEventListener('click', () => {
-            this.showAchievements();
+            this.showAchievementsModal();
+        });
+
+        this.elements.closeAchievements.addEventListener('click', () => {
+            this.hideAchievementsModal();
+        });
+
+        this.elements.closeAchievementsBtn.addEventListener('click', () => {
+            this.hideAchievementsModal();
+        });
+
+        // Close achievements modal on backdrop click
+        this.elements.achievementsModal.addEventListener('click', (e) => {
+            if (e.target === this.elements.achievementsModal) {
+                this.hideAchievementsModal();
+            }
         });
         
         // FAB
@@ -638,16 +660,24 @@ class OceanDriftGuardian {
         }
     }
     
-    toggleTurboMode() {
+    async toggleTurboMode() {
         this.state.isTurboMode = !this.state.isTurboMode;
         this.elements.turboBtn.classList.toggle('active', this.state.isTurboMode);
-        
-        if (this.state.isTurboMode) {
-            this.addActivity('Turbo mode activated! 🚀', 'success');
-            this.elements.turboBtn.style.animation = 'pulse 1s infinite';
-        } else {
-            this.addActivity('Turbo mode deactivated', 'info');
-            this.elements.turboBtn.style.animation = '';
+
+        // Send to main process to actually enable turbo mode
+        try {
+            await ipcRenderer.invoke('toggle-turbo-mode', this.state.isTurboMode);
+
+            if (this.state.isTurboMode) {
+                this.addActivity('Turbo mode activated! 🚀 Running 4 concurrent tasks', 'success');
+                this.elements.turboBtn.style.animation = 'pulse 1s infinite';
+            } else {
+                this.addActivity('Turbo mode deactivated - Back to 2 tasks', 'info');
+                this.elements.turboBtn.style.animation = '';
+            }
+        } catch (error) {
+            console.error('Error toggling turbo mode:', error);
+            this.addActivity('Error toggling turbo mode', 'error');
         }
     }
     
@@ -872,7 +902,155 @@ class OceanDriftGuardian {
     }
     
     showAchievements() {
-        this.addActivity('Achievements gallery coming soon!', 'info');
+        this.showAchievementsModal();
+    }
+
+    showAchievementsModal() {
+        this.elements.achievementsModal.classList.remove('hidden');
+        this.updateAchievementProgress();
+        this.generateAvatars();
+    }
+
+    hideAchievementsModal() {
+        this.elements.achievementsModal.classList.add('hidden');
+    }
+
+    updateAchievementProgress() {
+        const totalSeconds = this.state.totalTime;
+        const totalHours = totalSeconds / 3600;
+        const totalTasks = this.state.totalTasks;
+
+        // Define tier thresholds (in hours)
+        const tiers = [
+            { name: 'bronze', hours: 1, icon: '🥉' },
+            { name: 'silver', hours: 10, icon: '🥈' },
+            { name: 'gold', hours: 168, icon: '🥇' }, // 1 week
+            { name: 'platinum', hours: 720, icon: '💎' }, // 1 month
+            { name: 'diamond', hours: 2160, icon: '💠' } // 3 months
+        ];
+
+        tiers.forEach((tier, index) => {
+            const tierElement = document.querySelector(`[data-tier="${tier.name}"]`);
+            const progressFill = document.getElementById(`${tier.name}Progress`);
+            const progressText = document.getElementById(`${tier.name}Text`);
+
+            if (!tierElement || !progressFill || !progressText) return;
+
+            const isUnlocked = totalHours >= tier.hours;
+            const previousTierHours = index > 0 ? tiers[index - 1].hours : 0;
+            const nextTierHours = tier.hours;
+
+            if (isUnlocked) {
+                // Unlocked
+                tierElement.classList.remove('locked');
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Unlocked ✓';
+                progressText.style.color = 'var(--success)';
+            } else {
+                // Locked - show progress toward this tier
+                tierElement.classList.add('locked');
+                const progress = ((totalHours - previousTierHours) / (nextTierHours - previousTierHours)) * 100;
+                const clampedProgress = Math.max(0, Math.min(100, progress));
+                progressFill.style.width = clampedProgress + '%';
+
+                const hoursRemaining = Math.max(0, nextTierHours - totalHours);
+                progressText.textContent = `${hoursRemaining.toFixed(1)}h remaining`;
+                progressText.style.color = 'var(--text-secondary)';
+            }
+        });
+
+        // Update task achievements
+        this.updateTaskAchievements(totalTasks);
+    }
+
+    updateTaskAchievements(totalTasks) {
+        const taskMilestones = [
+            { id: 'first-task', count: 1 },
+            { id: '10-tasks', count: 10 },
+            { id: '100-tasks', count: 100 },
+            { id: '1000-tasks', count: 1000 }
+        ];
+
+        taskMilestones.forEach(milestone => {
+            const element = document.querySelector(`[data-id="${milestone.id}"]`);
+            if (!element) return;
+
+            const isUnlocked = totalTasks >= milestone.count;
+
+            if (isUnlocked) {
+                element.classList.remove('locked');
+                element.classList.add('unlocked');
+                element.querySelector('.achievement-badge').textContent = '✓';
+            } else {
+                element.classList.add('locked');
+                element.classList.remove('unlocked');
+                element.querySelector('.achievement-badge').textContent = '🔒';
+            }
+
+            // Update progress text
+            const progressElement = document.getElementById(`tasks${milestone.count}Progress`);
+            if (progressElement) {
+                progressElement.textContent = `${Math.min(totalTasks, milestone.count)}/${milestone.count}`;
+            }
+        });
+    }
+
+    generateAvatars() {
+        const totalHours = this.state.totalTime / 3600;
+
+        const avatars = [
+            { emoji: '🌊', name: 'Wave', tier: 0 },
+            { emoji: '🐠', name: 'Fish', tier: 0 },
+            { emoji: '🐟', name: 'Tropical Fish', tier: 1 },
+            { emoji: '🐡', name: 'Puffer', tier: 10 },
+            { emoji: '🦈', name: 'Shark', tier: 10 },
+            { emoji: '🐬', name: 'Dolphin', tier: 10 },
+            { emoji: '🐳', name: 'Whale', tier: 168 },
+            { emoji: '🐋', name: 'Blue Whale', tier: 168 },
+            { emoji: '🦑', name: 'Squid', tier: 168 },
+            { emoji: '🐙', name: 'Octopus', tier: 720 },
+            { emoji: '🦀', name: 'Crab', tier: 720 },
+            { emoji: '🦞', name: 'Lobster', tier: 720 },
+            { emoji: '⚓', name: 'Anchor', tier: 2160 },
+            { emoji: '🚢', name: 'Ship', tier: 2160 },
+            { emoji: '⛵', name: 'Sailboat', tier: 2160 }
+        ];
+
+        const gridHTML = avatars.map(avatar => {
+            const isUnlocked = totalHours >= avatar.tier;
+            const isSelected = this.state.selectedAvatar === avatar.emoji;
+
+            return `
+                <div class="avatar-option ${isUnlocked ? '' : 'locked'} ${isSelected ? 'selected' : ''}"
+                     data-avatar="${avatar.emoji}"
+                     data-tier="${avatar.tier}">
+                    ${isUnlocked ? avatar.emoji : '<span class="lock-overlay">🔒</span>'}
+                </div>
+            `;
+        }).join('');
+
+        this.elements.avatarGrid.innerHTML = gridHTML;
+
+        // Add click handlers
+        document.querySelectorAll('.avatar-option:not(.locked)').forEach(option => {
+            option.addEventListener('click', () => {
+                this.selectAvatar(option.dataset.avatar);
+            });
+        });
+    }
+
+    selectAvatar(emoji) {
+        this.state.selectedAvatar = emoji;
+
+        // Update avatar display
+        this.elements.userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emoji)}&background=4A90E2&color=fff&size=128`;
+
+        // Update selection in grid
+        document.querySelectorAll('.avatar-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.dataset.avatar === emoji);
+        });
+
+        this.addActivity(`Avatar changed to ${emoji}`, 'success');
     }
     
     showHelp() {
