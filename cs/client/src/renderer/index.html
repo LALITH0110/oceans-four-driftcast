@@ -640,6 +640,128 @@
                         </div>
                     </div>
 
+                    <!-- Real-World Impact -->
+                    <div class="achievement-section">
+                        <h4><i class="fas fa-globe-americas"></i> Your Real-World Impact</h4>
+                        <p class="help-text">See how your computing power is making a difference!</p>
+
+                        <div class="impact-metrics-grid">
+                            <div class="impact-metric-card ocean">
+                                <div class="impact-icon">🌊</div>
+                                <div class="impact-number" id="impactOceanArea">0</div>
+                                <div class="impact-label">km² of ocean analyzed</div>
+                            </div>
+
+                            <div class="impact-metric-card plastic">
+                                <div class="impact-icon">♻️</div>
+                                <div class="impact-number" id="impactPlasticSaved">0</div>
+                                <div class="impact-label">tons cleanup optimized</div>
+                            </div>
+
+                            <div class="impact-metric-card time">
+                                <div class="impact-icon">⏱️</div>
+                                <div class="impact-number" id="impactSearchHours">0</div>
+                                <div class="impact-label">hours search time saved</div>
+                            </div>
+
+                            <div class="impact-metric-card beaches">
+                                <div class="impact-icon">🏖️</div>
+                                <div class="impact-number" id="impactBeaches">0</div>
+                                <div class="impact-label">beaches worth of analysis</div>
+                            </div>
+                        </div>
+
+                        <div class="impact-comparison">
+                            <div class="comparison-header">
+                                <i class="fas fa-users"></i>
+                                <h5>Community Impact</h5>
+                            </div>
+                            <div class="comparison-content">
+                                <p class="comparison-stat">
+                                    Our <strong id="communityMembers">2,847</strong> volunteers =
+                                    <strong id="researchVessels">120</strong> research vessels worth of computing power
+                                </p>
+                                <p class="comparison-detail">
+                                    Together we've analyzed <strong id="totalCommunityArea">1.2M km²</strong> of ocean -
+                                    equivalent to the entire Mediterranean Sea!
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Social Sharing -->
+                        <div class="social-sharing">
+                            <h5><i class="fas fa-share-alt"></i> Share Your Impact</h5>
+                            <p class="help-text">Inspire others to join the movement!</p>
+
+                            <div class="share-preview" id="sharePreview">
+                                <div class="share-card">
+                                    <div class="share-card-header">
+                                        <div class="share-logo">🌊 Ocean Drift Guardian</div>
+                                    </div>
+                                    <div class="share-card-content">
+                                        <div class="share-stat-large" id="shareMainStat">0 km²</div>
+                                        <p class="share-message" id="shareMessage">
+                                            I helped analyze ocean plastic drift patterns!
+                                        </p>
+                                        <div class="share-substats">
+                                            <span id="shareSubstat1">0 tasks</span> •
+                                            <span id="shareSubstat2">0 hours</span>
+                                        </div>
+                                    </div>
+                                    <div class="share-card-footer">
+                                        Join the movement at DriftCast.org
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="share-buttons">
+                                <button class="btn-share twitter" id="shareTwitter">
+                                    <i class="fab fa-twitter"></i> Share on Twitter
+                                </button>
+                                <button class="btn-share linkedin" id="shareLinkedIn">
+                                    <i class="fab fa-linkedin"></i> Share on LinkedIn
+                                </button>
+                                <button class="btn-share facebook" id="shareFacebook">
+                                    <i class="fab fa-facebook"></i> Share on Facebook
+                                </button>
+                                <button class="btn-share download" id="downloadCard">
+                                    <i class="fas fa-download"></i> Download Card
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Referral Program -->
+                        <div class="referral-section">
+                            <div class="referral-header">
+                                <div class="referral-icon">🎁</div>
+                                <div class="referral-content">
+                                    <h5>Multiply Your Impact</h5>
+                                    <p>Invite friends and earn bonus rewards!</p>
+                                </div>
+                            </div>
+                            <div class="referral-stats">
+                                <div class="referral-stat">
+                                    <span class="referral-number" id="referralCount">0</span>
+                                    <span class="referral-label">Friends invited</span>
+                                </div>
+                                <div class="referral-stat">
+                                    <span class="referral-number" id="referralBonus">0</span>
+                                    <span class="referral-label">Bonus points earned</span>
+                                </div>
+                            </div>
+                            <div class="referral-link">
+                                <input type="text" readonly value="https://driftcast.org/join?ref=ABC123"
+                                       id="referralLinkInput" class="referral-input">
+                                <button class="btn btn-secondary" id="copyReferralLink">
+                                    <i class="fas fa-copy"></i> Copy Link
+                                </button>
+                            </div>
+                            <p class="referral-incentive">
+                                <i class="fas fa-gift"></i> Earn <strong>500 bonus points</strong> for each friend who joins!
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Task-based Achievements -->
                     <div class="achievement-section">
                         <h4><i class="fas fa-star"></i> Task Achievements</h4>

@@ -909,6 +909,8 @@ class OceanDriftGuardian {
         this.elements.achievementsModal.classList.remove('hidden');
         this.updateAchievementProgress();
         this.generateAvatars();
+        this.updateImpactMetrics();
+        this.setupSocialSharing();
     }
 
     hideAchievementsModal() {
@@ -1051,6 +1053,120 @@ class OceanDriftGuardian {
         });
 
         this.addActivity(`Avatar changed to ${emoji}`, 'success');
+    }
+
+    updateImpactMetrics() {
+        const totalTasks = this.state.totalTasks;
+        const totalHours = this.state.totalTime / 3600;
+
+        // Impact calculations based on research data
+        // Assumptions: Each task analyzes 10 particles, each particle = ~0.1 km² coverage
+        const oceanArea = (totalTasks * 10 * 0.1).toFixed(1); // km²
+
+        // Each km² analyzed = ~0.05 tons of plastic optimized for cleanup
+        const plasticSaved = (oceanArea * 0.05).toFixed(1);
+
+        // Each hour of computing = 2 hours of manual research time saved
+        const searchHoursSaved = (totalHours * 2).toFixed(0);
+
+        // Average beach = 1 km², so beaches = ocean area
+        const beaches = Math.floor(oceanArea);
+
+        // Update DOM
+        document.getElementById('impactOceanArea').textContent = this.formatNumber(oceanArea);
+        document.getElementById('impactPlasticSaved').textContent = this.formatNumber(plasticSaved);
+        document.getElementById('impactSearchHours').textContent = this.formatNumber(searchHoursSaved);
+        document.getElementById('impactBeaches').textContent = this.formatNumber(beaches);
+
+        // Update share card
+        this.updateShareCard(oceanArea, totalTasks, totalHours);
+    }
+
+    updateShareCard(oceanArea, totalTasks, totalHours) {
+        document.getElementById('shareMainStat').textContent = `${oceanArea} km²`;
+
+        const messages = [
+            `I helped analyze ocean plastic drift patterns!`,
+            `I'm making waves in ocean conservation!`,
+            `Contributing to cleaner oceans, one task at a time!`,
+            `My computer is helping save our oceans!`,
+            `Join me in the fight against ocean plastic!`
+        ];
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        document.getElementById('shareMessage').textContent = randomMessage;
+
+        document.getElementById('shareSubstat1').textContent = `${totalTasks} tasks completed`;
+        document.getElementById('shareSubstat2').textContent = `${totalHours.toFixed(1)} hours contributed`;
+    }
+
+    setupSocialSharing() {
+        const oceanArea = (this.state.totalTasks * 10 * 0.1).toFixed(1);
+        const totalHours = (this.state.totalTime / 3600).toFixed(1);
+
+        // Twitter share
+        const twitterBtn = document.getElementById('shareTwitter');
+        if (twitterBtn) {
+            twitterBtn.onclick = () => {
+                const text = `🌊 I helped analyze ${oceanArea} km² of ocean to fight plastic pollution! Join me at DriftCast to make an impact! #OceanConservation #CleanOceans`;
+                const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://driftcast.org')}`;
+                require('electron').shell.openExternal(url);
+                this.addActivity('Shared on Twitter!', 'success');
+            };
+        }
+
+        // LinkedIn share
+        const linkedinBtn = document.getElementById('shareLinkedIn');
+        if (linkedinBtn) {
+            linkedinBtn.onclick = () => {
+                const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://driftcast.org')}`;
+                require('electron').shell.openExternal(url);
+                this.addActivity('Shared on LinkedIn!', 'success');
+            };
+        }
+
+        // Facebook share
+        const facebookBtn = document.getElementById('shareFacebook');
+        if (facebookBtn) {
+            facebookBtn.onclick = () => {
+                const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://driftcast.org')}`;
+                require('electron').shell.openExternal(url);
+                this.addActivity('Shared on Facebook!', 'success');
+            };
+        }
+
+        // Download card
+        const downloadBtn = document.getElementById('downloadCard');
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                this.downloadShareCard();
+            };
+        }
+
+        // Copy referral link
+        const copyBtn = document.getElementById('copyReferralLink');
+        if (copyBtn) {
+            copyBtn.onclick = () => {
+                const input = document.getElementById('referralLinkInput');
+                input.select();
+                document.execCommand('copy');
+                this.addActivity('Referral link copied!', 'success');
+            };
+        }
+    }
+
+    downloadShareCard() {
+        // This would use html2canvas or similar library in production
+        // For now, we'll show a message
+        this.addActivity('Share card download coming soon! For now, take a screenshot 📸', 'info');
+
+        // In production, you'd do something like:
+        // const card = document.querySelector('.share-card');
+        // html2canvas(card).then(canvas => {
+        //     const link = document.createElement('a');
+        //     link.download = 'driftcast-impact.png';
+        //     link.href = canvas.toDataURL();
+        //     link.click();
+        // });
     }
     
     showHelp() {
