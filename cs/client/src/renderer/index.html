@@ -3,120 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ocean Plastic Forecast Client</title>
+    <title>Ocean Drift Guardian - Save Our Oceans</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app">
+        <!-- Navigation Header -->
         <header class="header">
             <div class="header-content">
-                <h1>Ocean Plastic Forecast</h1>
-                <div class="connection-status" id="connectionStatus">
-                    <span class="status-indicator" id="statusIndicator"></span>
-                    <span id="statusText">Disconnected</span>
+                <div class="brand">
+                    <i class="fas fa-water brand-icon"></i>
+                    <h1>Ocean Drift Guardian</h1>
+                    <span class="tagline">Join the global effort to track ocean plastic</span>
+                </div>
+                <div class="nav-right">
+                    <div class="connection-status" id="connectionStatus">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="statusText">Offline</span>
+                    </div>
+                    <div class="user-menu hidden" id="userMenu">
+                        <img src="https://ui-avatars.com/api/?name=User&background=4A90E2&color=fff" 
+                             alt="User" class="user-avatar" id="userAvatar">
+                        <span class="user-name" id="userName">Guest</span>
+                        <button class="btn-icon" id="logoutBtn" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
 
         <main class="main-content">
-            <!-- Registration Section -->
-            <section id="registrationSection" class="card">
-                <h2>Client Registration</h2>
-                <form id="registrationForm">
-                    <div class="form-group">
-                        <label for="clientName">Client Name:</label>
-                        <input type="text" id="clientName" required placeholder="Enter a name for this client">
+            <!-- Welcome/Registration Section -->
+            <section id="welcomeSection" class="welcome-section">
+                <div class="hero-card">
+                    <div class="ocean-animation">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="serverUrl">Server URL:</label>
-                        <input type="url" id="serverUrl" required placeholder="http://system80.rice.iit.edu:8000">
+                    <div class="hero-content">
+                        <h2>Welcome to Ocean Drift Guardian</h2>
+                        <p class="hero-text">
+                            Help scientists predict ocean plastic movement by contributing your computer's 
+                            spare processing power. Together, we can help cleanup organizations work more efficiently.
+                        </p>
+                        
+                        <div class="auth-container" id="authContainer">
+                            <div class="auth-tabs">
+                                <button class="auth-tab active" data-tab="register">Join Now</button>
+                                <button class="auth-tab" data-tab="login">Sign In</button>
+                            </div>
+                            
+                            <!-- Registration Form -->
+                            <form id="registrationForm" class="auth-form">
+                                <div class="form-group">
+                                    <label for="clientName">
+                                        <i class="fas fa-user"></i>
+                                        Display Name
+                                    </label>
+                                    <input type="text" id="clientName" required 
+                                           placeholder="Choose a name (e.g., OceanHero123)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">
+                                        <i class="fas fa-envelope"></i>
+                                        Email (optional)
+                                    </label>
+                                    <input type="email" id="email" 
+                                           placeholder="For updates and achievements">
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <label>
+                                        <input type="checkbox" id="termsAccept" required>
+                                        I want to help save our oceans
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-large">
+                                    <i class="fas fa-rocket"></i>
+                                    Start Contributing
+                                </button>
+                            </form>
+                            
+                            <!-- Login Form -->
+                            <form id="loginForm" class="auth-form hidden">
+                                <div class="form-group">
+                                    <label for="loginName">
+                                        <i class="fas fa-user"></i>
+                                        Display Name
+                                    </label>
+                                    <input type="text" id="loginName" required 
+                                           placeholder="Your display name">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-large">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    Sign In
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <div class="stats-preview">
+                            <div class="stat-preview-item">
+                                <i class="fas fa-users"></i>
+                                <span class="stat-number">2,847</span>
+                                <span class="stat-label">Active Contributors</span>
+                            </div>
+                            <div class="stat-preview-item">
+                                <i class="fas fa-tasks"></i>
+                                <span class="stat-number">1.2M</span>
+                                <span class="stat-label">Tasks Completed</span>
+                            </div>
+                            <div class="stat-preview-item">
+                                <i class="fas fa-globe-americas"></i>
+                                <span class="stat-number">47</span>
+                                <span class="stat-label">Countries</span>
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Register Client</button>
-                </form>
+                </div>
             </section>
 
-            <!-- Dashboard Section -->
+            <!-- Main Dashboard -->
             <section id="dashboardSection" class="hidden">
+                <!-- Quick Stats Bar -->
+                <div class="quick-stats-bar">
+                    <div class="quick-stat">
+                        <i class="fas fa-trophy"></i>
+                        <span class="quick-stat-value" id="userRank">#1,247</span>
+                        <span class="quick-stat-label">Global Rank</span>
+                    </div>
+                    <div class="quick-stat">
+                        <i class="fas fa-clock"></i>
+                        <span class="quick-stat-value" id="totalTime">0h</span>
+                        <span class="quick-stat-label">Computing Time</span>
+                    </div>
+                    <div class="quick-stat">
+                        <i class="fas fa-water"></i>
+                        <span class="quick-stat-value" id="oceanArea">0 km²</span>
+                        <span class="quick-stat-label">Ocean Area Analyzed</span>
+                    </div>
+                    <div class="quick-stat">
+                        <i class="fas fa-award"></i>
+                        <span class="quick-stat-value" id="achievements">0</span>
+                        <span class="quick-stat-label">Achievements</span>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid">
-                    <!-- System Info Card -->
+                    <!-- Performance Overview -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-line"></i> Performance Overview</h3>
+                        </div>
+                        <div class="performance-stats">
+                            <div class="perf-stat">
+                                <div class="perf-icon success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="perf-details">
+                                    <div class="perf-value" id="completedTasks">0</div>
+                                    <div class="perf-label">Tasks Completed</div>
+                                </div>
+                            </div>
+                            <div class="perf-stat">
+                                <div class="perf-icon warning">
+                                    <i class="fas fa-spinner"></i>
+                                </div>
+                                <div class="perf-details">
+                                    <div class="perf-value" id="activeTasks">0</div>
+                                    <div class="perf-label">Active Tasks</div>
+                                </div>
+                            </div>
+                            <div class="perf-stat">
+                                <div class="perf-icon info">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="perf-details">
+                                    <div class="perf-value" id="successRate">100%</div>
+                                    <div class="perf-label">Success Rate</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="contribution-chart">
+                            <canvas id="contributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Activity -->
                     <div class="card">
-                        <h3>System Information</h3>
-                        <div id="systemInfo">
-                            <div class="info-row">
-                                <span class="label">CPU:</span>
-                                <span id="cpuInfo">Loading...</span>
+                        <div class="card-header">
+                            <h3><i class="fas fa-satellite"></i> Real-time Activity</h3>
+                            <span class="live-indicator">
+                                <span class="live-dot"></span> LIVE
+                            </span>
+                        </div>
+                        <div class="activity-feed" id="activityFeed">
+                            <div class="activity-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Waiting for tasks...</span>
                             </div>
-                            <div class="info-row">
-                                <span class="label">Memory:</span>
-                                <span id="memoryInfo">Loading...</span>
+                        </div>
+                        <div class="current-task" id="currentTask">
+                            <div class="task-info">
+                                <span class="task-label">Current Task:</span>
+                                <span class="task-id">None</span>
                             </div>
-                            <div class="info-row">
-                                <span class="label">Platform:</span>
+                            <div class="task-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="taskProgress"></div>
+                                </div>
+                                <span class="progress-text">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Resources -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-microchip"></i> System Resources</h3>
+                        </div>
+                        <div class="resource-monitors">
+                            <div class="resource-item">
+                                <div class="resource-header">
+                                    <span class="resource-label">CPU Usage</span>
+                                    <span class="resource-value" id="cpuUsageText">0%</span>
+                                </div>
+                                <div class="resource-bar">
+                                    <div class="resource-fill cpu-fill" id="cpuUsageFill"></div>
+                                </div>
+                            </div>
+                            <div class="resource-item">
+                                <div class="resource-header">
+                                    <span class="resource-label">Memory Usage</span>
+                                    <span class="resource-value" id="memoryUsageText">0 MB</span>
+                                </div>
+                                <div class="resource-bar">
+                                    <div class="resource-fill memory-fill" id="memoryUsageFill"></div>
+                                </div>
+                            </div>
+                            <div class="resource-item">
+                                <div class="resource-header">
+                                    <span class="resource-label">Network Activity</span>
+                                    <span class="resource-value" id="networkActivity">Idle</span>
+                                </div>
+                                <div class="network-indicator" id="networkIndicator">
+                                    <span class="network-dot"></span>
+                                    <span class="network-dot"></span>
+                                    <span class="network-dot"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="system-info" id="systemInfo">
+                            <div class="info-item">
+                                <i class="fas fa-desktop"></i>
                                 <span id="platformInfo">Loading...</span>
                             </div>
+                            <div class="info-item">
+                                <i class="fas fa-memory"></i>
+                                <span id="totalMemory">Loading...</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Task Statistics Card -->
+                    <!-- Controls & Settings -->
                     <div class="card">
-                        <h3>Task Statistics</h3>
-                        <div id="taskStats">
-                            <div class="stat-item">
-                                <div class="stat-value" id="completedTasks">0</div>
-                                <div class="stat-label">Completed</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="failedTasks">0</div>
-                                <div class="stat-label">Failed</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="activeTasks">0</div>
-                                <div class="stat-label">Active</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="successRate">0%</div>
-                                <div class="stat-label">Success Rate</div>
-                            </div>
+                        <div class="card-header">
+                            <h3><i class="fas fa-cog"></i> Controls</h3>
+                        </div>
+                        <div class="control-buttons">
+                            <button id="pauseBtn" class="btn btn-control btn-pause">
+                                <i class="fas fa-pause"></i>
+                                <span>Pause</span>
+                            </button>
+                            <button id="turboBtn" class="btn btn-control btn-turbo">
+                                <i class="fas fa-bolt"></i>
+                                <span>Turbo Mode</span>
+                            </button>
+                            <button id="settingsBtn" class="btn btn-control">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Settings</span>
+                            </button>
+                        </div>
+                        <div class="schedule-info">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Running 24/7</span>
+                            <button class="btn-text" id="scheduleBtn">Change Schedule</button>
                         </div>
                     </div>
 
-                    <!-- Resource Usage Card -->
-                    <div class="card">
-                        <h3>Resource Usage</h3>
-                        <div id="resourceUsage">
-                            <div class="usage-item">
-                                <div class="usage-label">CPU Usage</div>
-                                <div class="usage-bar">
-                                    <div class="usage-fill" id="cpuUsageFill"></div>
-                                </div>
-                                <div class="usage-text" id="cpuUsageText">0%</div>
-                            </div>
-                            <div class="usage-item">
-                                <div class="usage-label">Memory Usage</div>
-                                <div class="usage-bar">
-                                    <div class="usage-fill" id="memoryUsageFill"></div>
-                                </div>
-                                <div class="usage-text" id="memoryUsageText">0%</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Controls Card -->
-                    <div class="card">
-                        <h3>Controls</h3>
-                        <div class="controls">
-                            <button id="pauseBtn" class="btn btn-warning">Pause Processing</button>
-                            <button id="requestTaskBtn" class="btn btn-secondary">Request Task</button>
-                            <button id="settingsBtn" class="btn btn-secondary">Settings</button>
-                        </div>
-                    </div>
-
-                    <!-- Activity Log Card -->
+                    <!-- Impact Visualization -->
                     <div class="card full-width">
-                        <h3>Activity Log</h3>
-                        <div id="activityLog" class="log-container">
-                            <div class="log-entry">
-                                <span class="log-time">Starting up...</span>
+                        <div class="card-header">
+                            <h3><i class="fas fa-globe"></i> Your Global Impact</h3>
+                        </div>
+                        <div class="impact-container">
+                            <div class="impact-map" id="impactMap">
+                                <!-- Placeholder for future map integration -->
+                                <div class="map-placeholder">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <p>Interactive impact map coming soon!</p>
+                                </div>
+                            </div>
+                            <div class="impact-stats">
+                                <div class="impact-stat">
+                                    <i class="fas fa-water"></i>
+                                    <span class="impact-value">42,738</span>
+                                    <span class="impact-label">Particles Tracked</span>
+                                </div>
+                                <div class="impact-stat">
+                                    <i class="fas fa-route"></i>
+                                    <span class="impact-value">1,247 km</span>
+                                    <span class="impact-label">Drift Distance Calculated</span>
+                                </div>
+                                <div class="impact-stat">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span class="impact-value">30 days</span>
+                                    <span class="impact-label">Forecast Range</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leaderboard -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-trophy"></i> Top Contributors</h3>
+                            <button class="btn-text" id="viewFullLeaderboard">View All</button>
+                        </div>
+                        <div class="leaderboard" id="leaderboard">
+                            <div class="leaderboard-item">
+                                <span class="rank gold">#1</span>
+                                <img src="https://ui-avatars.com/api/?name=Ocean+Master&background=FFD700&color=fff" 
+                                     alt="User" class="leaderboard-avatar">
+                                <span class="leaderboard-name">OceanMaster2024</span>
+                                <span class="leaderboard-score">847,293</span>
+                            </div>
+                            <div class="leaderboard-item">
+                                <span class="rank silver">#2</span>
+                                <img src="https://ui-avatars.com/api/?name=Wave+Rider&background=C0C0C0&color=fff" 
+                                     alt="User" class="leaderboard-avatar">
+                                <span class="leaderboard-name">WaveRider</span>
+                                <span class="leaderboard-score">724,182</span>
+                            </div>
+                            <div class="leaderboard-item">
+                                <span class="rank bronze">#3</span>
+                                <img src="https://ui-avatars.com/api/?name=Plastic+Hunter&background=CD7F32&color=fff" 
+                                     alt="User" class="leaderboard-avatar">
+                                <span class="leaderboard-name">PlasticHunter</span>
+                                <span class="leaderboard-score">612,847</span>
+                            </div>
+                            <div class="leaderboard-item you">
+                                <span class="rank">#1,247</span>
+                                <img src="https://ui-avatars.com/api/?name=You&background=4A90E2&color=fff" 
+                                     alt="You" class="leaderboard-avatar">
+                                <span class="leaderboard-name">You</span>
+                                <span class="leaderboard-score">12,847</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievements -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-medal"></i> Recent Achievements</h3>
+                            <button class="btn-text" id="viewAllAchievements">View All</button>
+                        </div>
+                        <div class="achievements-grid">
+                            <div class="achievement unlocked">
+                                <i class="fas fa-flag-checkered"></i>
+                                <span class="achievement-name">First Task</span>
+                            </div>
+                            <div class="achievement unlocked">
+                                <i class="fas fa-clock"></i>
+                                <span class="achievement-name">24 Hour Helper</span>
+                            </div>
+                            <div class="achievement locked">
+                                <i class="fas fa-fire"></i>
+                                <span class="achievement-name">100 Tasks</span>
+                                <span class="achievement-progress">42/100</span>
+                            </div>
+                            <div class="achievement locked">
+                                <i class="fas fa-globe"></i>
+                                <span class="achievement-name">Global Guardian</span>
                             </div>
                         </div>
                     </div>
@@ -127,41 +396,97 @@
             <div id="settingsModal" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Settings</h3>
+                        <h3><i class="fas fa-cog"></i> Settings</h3>
                         <button class="modal-close" id="closeSettings">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <form id="settingsForm">
+                        <div class="settings-tabs">
+                            <button class="settings-tab active" data-section="performance">Performance</button>
+                            <button class="settings-tab" data-section="schedule">Schedule</button>
+                            <button class="settings-tab" data-section="notifications">Notifications</button>
+                        </div>
+                        
+                        <div id="performanceSettings" class="settings-section">
+                            <h4>Resource Limits</h4>
                             <div class="form-group">
-                                <label for="maxCpuUsage">Max CPU Usage (%):</label>
-                                <input type="range" id="maxCpuUsage" min="10" max="100" value="50">
-                                <span id="maxCpuValue">50%</span>
+                                <label for="maxCpuUsage">
+                                    <i class="fas fa-microchip"></i>
+                                    Maximum CPU Usage
+                                </label>
+                                <div class="slider-group">
+                                    <input type="range" id="maxCpuUsage" min="10" max="100" value="50">
+                                    <span class="slider-value" id="maxCpuValue">50%</span>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="maxMemoryUsage">Max Memory Usage (MB):</label>
-                                <input type="number" id="maxMemoryUsage" min="512" max="8192" value="1024">
+                                <label for="maxMemoryUsage">
+                                    <i class="fas fa-memory"></i>
+                                    Maximum Memory Usage
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" id="maxMemoryUsage" min="512" max="8192" value="1024">
+                                    <span class="input-addon">MB</span>
+                                </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group checkbox-group">
                                 <label>
-                                    <input type="checkbox" id="autoStart"> Auto-start processing
+                                    <input type="checkbox" id="turboMode">
+                                    <span>Enable Turbo Mode (uses more resources)</span>
                                 </label>
                             </div>
-                            <div class="form-group">
+                        </div>
+                        
+                        <div id="scheduleSettings" class="settings-section hidden">
+                            <h4>Processing Schedule</h4>
+                            <div class="form-group checkbox-group">
                                 <label>
-                                    <input type="checkbox" id="runInBackground"> Run in background
+                                    <input type="checkbox" id="alwaysOn" checked>
+                                    <span>Always contribute when computer is idle</span>
                                 </label>
                             </div>
-                        </form>
+                            <div class="schedule-grid">
+                                <label>Active Hours:</label>
+                                <div class="time-slots">
+                                    <!-- Time slots would be generated here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="notificationSettings" class="settings-section hidden">
+                            <h4>Notifications</h4>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="achievementNotifs" checked>
+                                    <span>Achievement unlocked</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="milestoneNotifs" checked>
+                                    <span>Milestone reached</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="leaderboardNotifs">
+                                    <span>Leaderboard updates</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
-                        <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+                        <button class="btn btn-primary" id="saveSettings">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- Floating Action Button -->
+        <button class="fab hidden" id="fabHelp" title="Need help?">
+            <i class="fas fa-question"></i>
+        </button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
