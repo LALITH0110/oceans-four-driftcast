@@ -434,6 +434,50 @@
                                     <span>Enable Turbo Mode (uses more resources)</span>
                                 </label>
                             </div>
+
+                            <h4 style="margin-top: 1.5rem;">Battery Saver</h4>
+                            <div class="battery-status" id="batteryStatus">
+                                <i class="fas fa-plug" id="batteryIcon"></i>
+                                <span id="batteryText">Checking battery status...</span>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="autoPauseOnBattery">
+                                    <span>Auto-pause when on battery power</span>
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="reduceCpuOnBattery">
+                                    <span>Reduce CPU limit to 20% on battery</span>
+                                </label>
+                            </div>
+
+                            <h4 style="margin-top: 1.5rem;">Smart Pause</h4>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="enableSmartPause">
+                                    <span>Enable smart pause when system is busy</span>
+                                </label>
+                            </div>
+                            <div class="form-group" id="smartPauseOptions" style="display: none;">
+                                <label for="pauseCpuThreshold">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Pause when system CPU exceeds
+                                </label>
+                                <div class="slider-group">
+                                    <input type="range" id="pauseCpuThreshold" min="60" max="90" value="75">
+                                    <span class="slider-value" id="pauseCpuValue">75%</span>
+                                </div>
+                            </div>
+                            <div class="form-group" id="smartResumeOptions" style="display: none;">
+                                <label for="resumeCpuThreshold">
+                                    <i class="fas fa-check-circle"></i>
+                                    Resume when system CPU drops below
+                                </label>
+                                <div class="slider-group">
+                                    <input type="range" id="resumeCpuThreshold" min="30" max="60" value="40">
+                                    <span class="slider-value" id="resumeCpuValue">40%</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <div id="scheduleSettings" class="settings-section hidden">
@@ -441,13 +485,36 @@
                             <div class="form-group checkbox-group">
                                 <label>
                                     <input type="checkbox" id="alwaysOn" checked>
-                                    <span>Always contribute when computer is idle</span>
+                                    <span>Always contribute when computer is idle (24/7)</span>
                                 </label>
                             </div>
-                            <div class="schedule-grid">
-                                <label>Active Hours:</label>
-                                <div class="time-slots">
-                                    <!-- Time slots would be generated here -->
+
+                            <div id="customScheduleSection" style="display: none;">
+                                <h4 style="margin-top: 1.5rem;">Quick Presets</h4>
+                                <div class="schedule-presets">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="presetNights">
+                                        <i class="fas fa-moon"></i> Nights Only
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="presetWeekends">
+                                        <i class="fas fa-calendar-weekend"></i> Weekends
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="presetOffHours">
+                                        <i class="fas fa-business-time"></i> Off Work Hours
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="presetClear">
+                                        <i class="fas fa-eraser"></i> Clear All
+                                    </button>
+                                </div>
+
+                                <h4 style="margin-top: 1.5rem;">Custom Schedule</h4>
+                                <p class="help-text">Click and drag to select active hours</p>
+                                <div class="schedule-grid-container" id="scheduleGrid">
+                                    <!-- Schedule grid will be generated by JavaScript -->
+                                </div>
+
+                                <div class="schedule-status">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="scheduleStatusText">Currently in scheduled time</span>
                                 </div>
                             </div>
                         </div>

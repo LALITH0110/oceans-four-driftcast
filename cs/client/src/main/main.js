@@ -24,9 +24,10 @@ class OceanForecastApp {
         this.serverCommunicator = new ServerCommunicator();
         this.taskManager = new TaskManager(this.serverCommunicator);
         this.systemMonitor = new SystemMonitor();
-        
+
         this.isQuitting = false;
         this.isRegistered = false;
+        this.autoPausedReason = null; // Track if we auto-paused for smart features
     }
     
     async initialize() {
@@ -287,6 +288,86 @@ class OceanForecastApp {
         setInterval(() => {
             this.updateUI();
         }, 5000); // Update every 5 seconds
+
+        // Setup smart pause checker
+        setInterval(() => {
+            this.checkSmartPause();
+        }, 10000); // Check every 10 seconds
+    }
+
+    async checkSmartPause() {
+        const settings = store.get();
+        const systemStats = this.systemMonitor.getCurrentStats();
+
+        if (!systemStats) return;
+
+        let shouldPause = false;
+        let pauseReason = '';
+
+        // Check 1: Battery-based pause
+        if (settings.autoPauseOnBattery && systemStats.battery) {
+            const { hasBattery, isCharging, acConnected } = systemStats.battery;
+            if (hasBattery && !isCharging && !acConnected) {
+                shouldPause = true;
+                pauseReason = 'on battery power';
+            }
+        }
+
+        // Check 2: Schedule-based pause
+        if (settings.schedule && settings.schedule.length > 0 && !settings.alwaysOn) {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const currentHour = now.getHours();
+
+            const isInSchedule = settings.schedule.some(slot =>
+                slot.day === currentDay && slot.hour === currentHour
+            );
+
+            if (!isInSchedule) {
+                shouldPause = true;
+                pauseReason = 'outside scheduled hours';
+            }
+        }
+
+        // Check 3: Smart pause based on system CPU
+        if (settings.enableSmartPause && systemStats.cpu) {
+            const systemCpu = systemStats.cpu.usage || 0;
+            const pauseThreshold = settings.pauseCpuThreshold || 75;
+
+            // Only pause if system CPU is high
+            if (systemCpu > pauseThreshold && !this.taskManager.isPaused) {
+                shouldPause = true;
+                pauseReason = `system CPU at ${systemCpu.toFixed(0)}%`;
+            }
+
+            // Resume if system CPU is low and we were auto-paused
+            const resumeThreshold = settings.resumeCpuThreshold || 40;
+            if (systemCpu < resumeThreshold && this.taskManager.isPaused && this.autoPausedReason) {
+                shouldPause = false;
+                pauseReason = '';
+            }
+        }
+
+        // Apply pause/resume
+        if (shouldPause && !this.taskManager.isPaused) {
+            log.info(`Auto-pausing: ${pauseReason}`);
+            this.autoPausedReason = pauseReason;
+            await this.taskManager.pause();
+
+            // Notify renderer
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('processing-paused');
+            }
+        } else if (!shouldPause && this.taskManager.isPaused && this.autoPausedReason) {
+            log.info('Auto-resuming: conditions cleared');
+            this.autoPausedReason = null;
+            this.taskManager.resume();
+
+            // Notify renderer
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                this.mainWindow.webContents.send('processing-resumed');
+            }
+        }
     }
     
     updateUI() {
@@ -297,8 +378,14 @@ class OceanForecastApp {
                 taskStats: this.taskManager.getStatistics(),
                 systemInfo: this.systemMonitor.getCurrentStats()
             };
-            
+
             this.mainWindow.webContents.send('status-update', status);
+
+            // Send battery status separately
+            const batteryData = this.systemMonitor.getCurrentStats().battery;
+            if (batteryData) {
+                this.mainWindow.webContents.send('battery-status-update', batteryData);
+            }
         }
     }
     

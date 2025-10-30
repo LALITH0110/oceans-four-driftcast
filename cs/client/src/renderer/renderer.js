@@ -21,6 +21,9 @@ class OceanDriftGuardian {
         this.settings = {};
         this.activityChart = null;
         this.taskStartTime = null;
+        this.schedule = []; // Array of active time blocks: {day: 0-6, hour: 0-23}
+        this.isDragging = false; // For schedule grid dragging
+        this.dragMode = null; // 'select' or 'deselect'
         
         this.initializeUI();
         this.setupEventListeners();
@@ -93,6 +96,31 @@ class OceanDriftGuardian {
             achievementNotifs: document.getElementById('achievementNotifs'),
             milestoneNotifs: document.getElementById('milestoneNotifs'),
             leaderboardNotifs: document.getElementById('leaderboardNotifs'),
+
+            // Battery Saver
+            batteryStatus: document.getElementById('batteryStatus'),
+            batteryIcon: document.getElementById('batteryIcon'),
+            batteryText: document.getElementById('batteryText'),
+            autoPauseOnBattery: document.getElementById('autoPauseOnBattery'),
+            reduceCpuOnBattery: document.getElementById('reduceCpuOnBattery'),
+
+            // Smart Pause
+            enableSmartPause: document.getElementById('enableSmartPause'),
+            smartPauseOptions: document.getElementById('smartPauseOptions'),
+            smartResumeOptions: document.getElementById('smartResumeOptions'),
+            pauseCpuThreshold: document.getElementById('pauseCpuThreshold'),
+            pauseCpuValue: document.getElementById('pauseCpuValue'),
+            resumeCpuThreshold: document.getElementById('resumeCpuThreshold'),
+            resumeCpuValue: document.getElementById('resumeCpuValue'),
+
+            // Schedule
+            customScheduleSection: document.getElementById('customScheduleSection'),
+            scheduleGrid: document.getElementById('scheduleGrid'),
+            scheduleStatusText: document.getElementById('scheduleStatusText'),
+            presetNights: document.getElementById('presetNights'),
+            presetWeekends: document.getElementById('presetWeekends'),
+            presetOffHours: document.getElementById('presetOffHours'),
+            presetClear: document.getElementById('presetClear'),
             
             // FAB
             fabHelp: document.getElementById('fabHelp')
@@ -167,6 +195,48 @@ class OceanDriftGuardian {
         this.elements.maxCpuUsage.addEventListener('input', (e) => {
             this.elements.maxCpuValue.textContent = e.target.value + '%';
         });
+
+        // Smart Pause sliders
+        this.elements.pauseCpuThreshold.addEventListener('input', (e) => {
+            this.elements.pauseCpuValue.textContent = e.target.value + '%';
+        });
+
+        this.elements.resumeCpuThreshold.addEventListener('input', (e) => {
+            this.elements.resumeCpuValue.textContent = e.target.value + '%';
+        });
+
+        // Smart Pause toggle
+        this.elements.enableSmartPause.addEventListener('change', (e) => {
+            const isEnabled = e.target.checked;
+            this.elements.smartPauseOptions.style.display = isEnabled ? 'block' : 'none';
+            this.elements.smartResumeOptions.style.display = isEnabled ? 'block' : 'none';
+        });
+
+        // Always On toggle
+        this.elements.alwaysOn.addEventListener('change', (e) => {
+            const isAlwaysOn = e.target.checked;
+            this.elements.customScheduleSection.style.display = isAlwaysOn ? 'none' : 'block';
+            if (!isAlwaysOn && this.schedule.length === 0) {
+                this.generateScheduleGrid();
+            }
+        });
+
+        // Schedule presets
+        this.elements.presetNights.addEventListener('click', () => {
+            this.applySchedulePreset('nights');
+        });
+
+        this.elements.presetWeekends.addEventListener('click', () => {
+            this.applySchedulePreset('weekends');
+        });
+
+        this.elements.presetOffHours.addEventListener('click', () => {
+            this.applySchedulePreset('offhours');
+        });
+
+        this.elements.presetClear.addEventListener('click', () => {
+            this.clearSchedule();
+        });
         
         // Modal backdrop click
         this.elements.settingsModal.addEventListener('click', (e) => {
@@ -214,6 +284,10 @@ class OceanDriftGuardian {
             this.elements.pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
             this.elements.pauseBtn.classList.remove('active');
         });
+
+        ipcRenderer.on('battery-status-update', (event, batteryData) => {
+            this.updateBatteryStatus(batteryData);
+        });
     }
     
     switchAuthTab(tab) {
@@ -255,6 +329,34 @@ class OceanDriftGuardian {
         this.elements.achievementNotifs.checked = this.settings.achievementNotifs !== false;
         this.elements.milestoneNotifs.checked = this.settings.milestoneNotifs !== false;
         this.elements.leaderboardNotifs.checked = this.settings.leaderboardNotifs === true;
+
+        // Battery Saver
+        this.elements.autoPauseOnBattery.checked = this.settings.autoPauseOnBattery === true;
+        this.elements.reduceCpuOnBattery.checked = this.settings.reduceCpuOnBattery === true;
+
+        // Smart Pause
+        this.elements.enableSmartPause.checked = this.settings.enableSmartPause === true;
+        this.elements.pauseCpuThreshold.value = this.settings.pauseCpuThreshold || 75;
+        this.elements.pauseCpuValue.textContent = (this.settings.pauseCpuThreshold || 75) + '%';
+        this.elements.resumeCpuThreshold.value = this.settings.resumeCpuThreshold || 40;
+        this.elements.resumeCpuValue.textContent = (this.settings.resumeCpuThreshold || 40) + '%';
+
+        // Show/hide smart pause options
+        const smartPauseEnabled = this.settings.enableSmartPause === true;
+        this.elements.smartPauseOptions.style.display = smartPauseEnabled ? 'block' : 'none';
+        this.elements.smartResumeOptions.style.display = smartPauseEnabled ? 'block' : 'none';
+
+        // Show/hide schedule section
+        const alwaysOn = this.settings.alwaysOn !== false;
+        this.elements.customScheduleSection.style.display = alwaysOn ? 'none' : 'block';
+
+        // Load schedule
+        this.schedule = this.settings.schedule || [];
+        if (!alwaysOn && this.schedule.length === 0) {
+            this.generateScheduleGrid();
+        } else if (!alwaysOn) {
+            this.generateScheduleGrid();
+        }
     }
     
     async handleRegistration() {
@@ -567,15 +669,27 @@ class OceanDriftGuardian {
                 alwaysOn: this.elements.alwaysOn.checked,
                 achievementNotifs: this.elements.achievementNotifs.checked,
                 milestoneNotifs: this.elements.milestoneNotifs.checked,
-                leaderboardNotifs: this.elements.leaderboardNotifs.checked
+                leaderboardNotifs: this.elements.leaderboardNotifs.checked,
+
+                // Battery Saver
+                autoPauseOnBattery: this.elements.autoPauseOnBattery.checked,
+                reduceCpuOnBattery: this.elements.reduceCpuOnBattery.checked,
+
+                // Smart Pause
+                enableSmartPause: this.elements.enableSmartPause.checked,
+                pauseCpuThreshold: parseInt(this.elements.pauseCpuThreshold.value),
+                resumeCpuThreshold: parseInt(this.elements.resumeCpuThreshold.value),
+
+                // Schedule
+                schedule: this.schedule
             };
-            
+
             await ipcRenderer.invoke('save-settings', newSettings);
             this.settings = { ...this.settings, ...newSettings };
-            
+
             this.hideSettings();
             this.addActivity('Settings saved successfully', 'success');
-            
+
         } catch (error) {
             console.error('Error saving settings:', error);
             this.addActivity('Error saving settings', 'error');
@@ -776,6 +890,178 @@ class OceanDriftGuardian {
                 });
             }, 100);
         }
+    }
+
+    // Battery Status Update
+    updateBatteryStatus(batteryData) {
+        if (!batteryData) return;
+
+        const { hasBattery, isCharging, percent, acConnected } = batteryData;
+        const batteryEl = this.elements.batteryStatus;
+        const iconEl = this.elements.batteryIcon;
+        const textEl = this.elements.batteryText;
+
+        // Remove existing status classes
+        batteryEl.classList.remove('charging', 'on-battery', 'low-battery');
+
+        if (!hasBattery) {
+            iconEl.className = 'fas fa-plug';
+            textEl.textContent = 'AC Power (Desktop)';
+            batteryEl.classList.add('charging');
+        } else if (isCharging || acConnected) {
+            iconEl.className = 'fas fa-charging-station';
+            textEl.textContent = `Charging ${percent}%`;
+            batteryEl.classList.add('charging');
+        } else {
+            iconEl.className = 'fas fa-battery-three-quarters';
+            textEl.textContent = `On Battery ${percent}%`;
+            batteryEl.classList.add('on-battery');
+
+            if (percent < 20) {
+                batteryEl.classList.add('low-battery');
+                iconEl.className = 'fas fa-battery-quarter';
+            }
+        }
+    }
+
+    // Generate Schedule Grid
+    generateScheduleGrid() {
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const gridContainer = this.elements.scheduleGrid;
+
+        let gridHTML = '<div class="schedule-grid-wrapper">';
+
+        // Header row with hour labels
+        gridHTML += '<div class="schedule-grid-header">';
+        gridHTML += '<div class="schedule-day-label"></div>'; // Empty corner
+        for (let hour = 0; hour < 24; hour++) {
+            gridHTML += `<div class="schedule-hour-label">${hour}</div>`;
+        }
+        gridHTML += '</div>';
+
+        // Day rows
+        for (let day = 0; day < 7; day++) {
+            gridHTML += '<div class="schedule-grid-row">';
+            gridHTML += `<div class="schedule-day-label">${days[day]}</div>`;
+
+            for (let hour = 0; hour < 24; hour++) {
+                const isActive = this.isScheduleSlotActive(day, hour);
+                gridHTML += `<div class="schedule-cell ${isActive ? 'active' : ''}"
+                                  data-day="${day}" data-hour="${hour}"></div>`;
+            }
+            gridHTML += '</div>';
+        }
+
+        gridHTML += '</div>';
+        gridContainer.innerHTML = gridHTML;
+
+        // Add mouse event listeners for dragging
+        const cells = gridContainer.querySelectorAll('.schedule-cell');
+        cells.forEach(cell => {
+            cell.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.isDragging = true;
+                this.dragMode = cell.classList.contains('active') ? 'deselect' : 'select';
+                this.toggleScheduleCell(cell);
+            });
+
+            cell.addEventListener('mouseenter', () => {
+                if (this.isDragging) {
+                    this.toggleScheduleCell(cell);
+                }
+            });
+
+            cell.addEventListener('mouseup', () => {
+                this.isDragging = false;
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            this.isDragging = false;
+        });
+    }
+
+    isScheduleSlotActive(day, hour) {
+        return this.schedule.some(slot => slot.day === day && slot.hour === hour);
+    }
+
+    toggleScheduleCell(cell) {
+        const day = parseInt(cell.dataset.day);
+        const hour = parseInt(cell.dataset.hour);
+
+        if (this.dragMode === 'select') {
+            // Add to schedule
+            if (!this.isScheduleSlotActive(day, hour)) {
+                this.schedule.push({ day, hour });
+                cell.classList.add('active');
+            }
+        } else {
+            // Remove from schedule
+            this.schedule = this.schedule.filter(slot => !(slot.day === day && slot.hour === hour));
+            cell.classList.remove('active');
+        }
+    }
+
+    applySchedulePreset(preset) {
+        this.schedule = [];
+
+        switch (preset) {
+            case 'nights':
+                // 10 PM to 6 AM every day
+                for (let day = 0; day < 7; day++) {
+                    for (let hour = 22; hour < 24; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                    for (let hour = 0; hour < 6; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                }
+                break;
+
+            case 'weekends':
+                // All day Saturday (6) and Sunday (0)
+                for (let day of [0, 6]) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                }
+                break;
+
+            case 'offhours':
+                // Weekdays 6 PM to 9 AM, plus all weekend
+                for (let day = 1; day < 6; day++) { // Mon-Fri
+                    for (let hour = 18; hour < 24; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                    for (let hour = 0; hour < 9; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                }
+                // Add full weekend
+                for (let day of [0, 6]) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        this.schedule.push({ day, hour });
+                    }
+                }
+                break;
+        }
+
+        this.generateScheduleGrid();
+        this.addActivity(`Applied ${preset} schedule preset`, 'info');
+    }
+
+    clearSchedule() {
+        this.schedule = [];
+        this.generateScheduleGrid();
+        this.addActivity('Schedule cleared', 'info');
+    }
+
+    isTimeInSchedule() {
+        const now = new Date();
+        const day = now.getDay();
+        const hour = now.getHours();
+
+        return this.isScheduleSlotActive(day, hour);
     }
 }
 

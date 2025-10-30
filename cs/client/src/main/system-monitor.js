@@ -9,16 +9,19 @@ class SystemMonitor {
     constructor() {
         this.isRunning = false;
         this.monitoringInterval = null;
+        this.batteryInterval = null;
         this.currentStats = {
             cpu: { usage: 0, cores: 0 },
             memory: { used: 0, total: 0, available: 0 },
             disk: { used: 0, total: 0 },
             network: { rx: 0, tx: 0 },
+            battery: { hasBattery: false, isCharging: false, percent: 100, timeRemaining: null },
             timestamp: new Date()
         };
-        
+
         this.systemInfo = null;
         this.updateInterval = 5000; // 5 seconds
+        this.batteryUpdateInterval = 30000; // 30 seconds for battery
     }
     
     async start() {
@@ -36,10 +39,16 @@ class SystemMonitor {
         this.monitoringInterval = setInterval(async () => {
             await this.updateStats();
         }, this.updateInterval);
-        
+
+        // Start battery monitoring
+        this.batteryInterval = setInterval(async () => {
+            await this.updateBatteryStatus();
+        }, this.batteryUpdateInterval);
+
         // Initial stats update
         await this.updateStats();
-        
+        await this.updateBatteryStatus();
+
         log.info('System monitor started');
     }
     
@@ -47,15 +56,20 @@ class SystemMonitor {
         if (!this.isRunning) {
             return;
         }
-        
+
         log.info('Stopping system monitor...');
         this.isRunning = false;
-        
+
         if (this.monitoringInterval) {
             clearInterval(this.monitoringInterval);
             this.monitoringInterval = null;
         }
-        
+
+        if (this.batteryInterval) {
+            clearInterval(this.batteryInterval);
+            this.batteryInterval = null;
+        }
+
         log.info('System monitor stopped');
     }
     
@@ -191,7 +205,39 @@ class SystemMonitor {
             };
         }
     }
-    
+
+    async updateBatteryStatus() {
+        try {
+            const battery = await si.battery();
+
+            this.currentStats.battery = {
+                hasBattery: battery.hasBattery,
+                isCharging: battery.isCharging,
+                percent: battery.percent || 100,
+                timeRemaining: battery.timeRemaining || null,
+                acConnected: battery.acConnected,
+                type: battery.type || 'Unknown',
+                model: battery.model || 'Unknown'
+            };
+
+            log.debug(`Battery status: ${battery.isCharging ? 'Charging' : 'On Battery'} (${battery.percent}%)`);
+
+        } catch (error) {
+            log.debug('Battery information not available:', error.message);
+
+            // Fallback - assume desktop/no battery
+            this.currentStats.battery = {
+                hasBattery: false,
+                isCharging: true,
+                percent: 100,
+                timeRemaining: null,
+                acConnected: true,
+                type: 'AC Power',
+                model: 'Desktop'
+            };
+        }
+    }
+
     getCurrentStats() {
         return { ...this.currentStats };
     }
