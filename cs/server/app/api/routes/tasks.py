@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 
 from app.config.database import get_async_session
-from app.models.database import Task, TaskResult
+from app.models.database import Task, TaskResult, Client
 from app.auth.manager import auth_manager, verify_client_token_dependency
 from app.scheduler.task_manager import task_scheduler
 
@@ -47,6 +47,14 @@ async def get_available_task(
 ) -> Optional[TaskResponse]:
     """Get an available task for the client"""
     try:
+        # Ensure client is registered with the in-memory scheduler (can be lost after restarts)
+        if client_id not in task_scheduler.client_pool:
+            result = await session.execute(select(Client).where(Client.id == client_id))
+            client = result.scalar_one_or_none()
+            if client:
+                await task_scheduler.register_client(client)
+                logger.info(f"Re-registered client {client_id} with scheduler for task request")
+
         # Get task from scheduler
         task_data = await task_scheduler.assign_task(client_id)
         
@@ -70,6 +78,14 @@ async def request_task(
 ) -> Optional[TaskResponse]:
     """Request a new task (alternative to WebSocket)"""
     try:
+        # Ensure client is registered with the scheduler
+        if client_id not in task_scheduler.client_pool:
+            result = await session.execute(select(Client).where(Client.id == client_id))
+            client = result.scalar_one_or_none()
+            if client:
+                await task_scheduler.register_client(client)
+                logger.info(f"Re-registered client {client_id} with scheduler for task request")
+
         # Get task from scheduler
         task_data = await task_scheduler.assign_task(client_id)
         

@@ -357,6 +357,16 @@ class ServerCommunicator {
             throw error;
         }
     }
+
+    async clearStuckTasks() {
+        try {
+            const response = await this.api.post('/api/v1/admin/tasks/clear-stuck');
+            return response.data;
+        } catch (error) {
+            log.error('Error calling clear-stuck:', error.message);
+            return null;
+        }
+    }
     
     async sendHeartbeat() {
         try {

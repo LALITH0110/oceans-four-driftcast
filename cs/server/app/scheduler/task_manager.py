@@ -182,9 +182,28 @@ class TaskScheduler:
             logger.info(f"Client {client_id} has {client_task_count}/{self.max_tasks_per_client} active tasks (total active: {len(self.active_tasks)})")
             
             if client_task_count >= self.max_tasks_per_client:
-                logger.warning(f"Client {client_id} has reached max task limit ({client_task_count}/{self.max_tasks_per_client})")
-                logger.info(f"Active tasks for this client: {[tid for tid, wu in self.active_tasks.items() if wu.assigned_client == client_id]}")
-                return None
+                # Attempt to free up stale tasks assigned to this client
+                freed = 0
+                now = datetime.utcnow()
+                stale_threshold_seconds = 120  # 2 minutes without completion => requeue
+                for task_id, work_unit in list(self.active_tasks.items()):
+                    if work_unit.assigned_client == client_id and work_unit.assigned_at:
+                        age = (now - work_unit.assigned_at).total_seconds()
+                        if age > stale_threshold_seconds:
+                            # Requeue as stale
+                            work_unit.assigned_client = None
+                            work_unit.assigned_at = None
+                            await self.work_queue.put(work_unit)
+                            self.active_tasks.pop(task_id, None)
+                            freed += 1
+                            logger.warning(f"Requeued stale task {task_id} for client {client_id} (age: {int(age)}s)")
+                if freed > 0:
+                    logger.info(f"Freed {freed} stale tasks for client {client_id}")
+                    client_task_count = await self._get_client_active_tasks(client_id)
+                if client_task_count >= self.max_tasks_per_client:
+                    logger.warning(f"Client {client_id} at max task limit after cleanup ({client_task_count}/{self.max_tasks_per_client})")
+                    logger.info(f"Active tasks for this client: {[tid for tid, wu in self.active_tasks.items() if wu.assigned_client == client_id]}")
+                    return None
             
             # Get next available task
             queue_size = self.work_queue.qsize()
@@ -192,8 +211,12 @@ class TaskScheduler:
             
             if self.work_queue.empty():
                 logger.info("No tasks available in queue, triggering batch creation")
-                asyncio.create_task(self._check_and_create_tasks())
-                return None
+                # Prefer synchronous creation to reduce client idle time
+                await self._check_and_create_tasks()
+                # If tasks were created, retrieve one immediately
+                if self.work_queue.empty():
+                    logger.info("Task queue still empty after creation attempt")
+                    return None
             
             work_unit = await self.work_queue.get()
             logger.info(f"Retrieved task {work_unit.id} from queue (remaining in queue: {self.work_queue.qsize()})")

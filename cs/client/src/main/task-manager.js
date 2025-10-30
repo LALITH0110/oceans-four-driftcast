@@ -25,6 +25,8 @@ class TaskManager {
         
         // Cron job for periodic task requests
         this.taskRequestJob = null;
+        // Cron job for periodic stuck-task clearing
+        this.clearStuckJob = null;
         
         // Prevent duplicate task requests
         this.isRequestingTask = false;
@@ -60,6 +62,18 @@ class TaskManager {
         
         this.taskRequestJob.start();
         
+        // Start periodic clear-stuck (every 10 seconds)
+        this.clearStuckJob = cron.schedule('*/10 * * * * *', async () => {
+            try {
+                const result = await this.serverCommunicator.clearStuckTasks();
+                if (result?.cleared_count > 0) {
+                    log.warn(`Auto clear-stuck requeued ${result.cleared_count} tasks`);
+                }
+            } catch (e) {
+                log.debug('clear-stuck call failed (ignored):', e.message);
+            }
+        }, { scheduled: true });
+        
         // Request initial task immediately
         setTimeout(() => {
             if (!this.isPaused && this.activeTasks.size < this.maxConcurrentTasks) {
@@ -82,6 +96,9 @@ class TaskManager {
         // Stop cron job
         if (this.taskRequestJob) {
             this.taskRequestJob.stop();
+        }
+        if (this.clearStuckJob) {
+            this.clearStuckJob.stop();
         }
         
         // Wait for active tasks to complete or timeout

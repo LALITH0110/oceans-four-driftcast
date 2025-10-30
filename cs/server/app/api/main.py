@@ -155,6 +155,12 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             message_type = data.get("type")
             
             if message_type == "heartbeat":
+                # Refresh in-memory client last_seen to keep scheduler registration alive
+                try:
+                    from datetime import datetime as _dt
+                    real_client.last_seen = _dt.utcnow()
+                except Exception:
+                    pass
                 await connection_manager.send_personal_message(
                     {"type": "heartbeat_ack", "timestamp": data.get("timestamp")},
                     client_id
