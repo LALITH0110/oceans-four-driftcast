@@ -174,10 +174,10 @@ class OceanForecastApp {
         // Handle settings
         ipcMain.handle('get-settings', () => {
             return {
-                // Local development
-                serverUrl: store.get('serverUrl', 'http://localhost:8000'),
-                // Production (uncomment for deployment)
-                // serverUrl: store.get('serverUrl', 'https://system80.rice.iit.edu'),
+                // Production server
+                serverUrl: store.get('serverUrl', 'https://system76.rice.iit.edu'),
+                // Local development (uncomment for local testing)
+                // serverUrl: store.get('serverUrl', 'http://localhost:8000'),
                 maxCpuUsage: store.get('maxCpuUsage', 50),
                 maxMemoryUsage: store.get('maxMemoryUsage', 1024),
                 autoStart: store.get('autoStart', false),

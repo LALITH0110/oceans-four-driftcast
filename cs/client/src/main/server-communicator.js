@@ -2,6 +2,7 @@
  * Server communication for API calls and WebSocket connection
  */
 const axios = require('axios');
+const https = require('https');
 const WebSocket = require('ws');
 const log = require('electron-log');
 const Store = require('electron-store');
@@ -10,10 +11,10 @@ const store = new Store();
 
 class ServerCommunicator {
     constructor() {
-        // Local development
-        this.serverUrl = 'http://localhost:8000'; // Local server
-        // Production (uncomment for deployment)
-        // this.serverUrl = 'https://system80.rice.iit.edu';
+        // Production server
+        this.serverUrl = 'https://system76.rice.iit.edu';
+        // Local development (uncomment for local testing)
+        // this.serverUrl = 'http://localhost:8000';
         
         this.wsUrl = this.serverUrl.replace('http', 'ws').replace('https', 'wss');
         this.clientId = null;
@@ -30,7 +31,11 @@ class ServerCommunicator {
             timeout: 30000,
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            // Allow self-signed certificates for development/production with self-signed certs
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
         });
         
         // Add request interceptor for authentication
@@ -132,7 +137,10 @@ class ServerCommunicator {
         return new Promise((resolve, reject) => {
             try {
                 const wsUrl = `${this.wsUrl}/ws/client/${this.clientId}`;
-                this.websocket = new WebSocket(wsUrl);
+                // Allow self-signed certificates
+                this.websocket = new WebSocket(wsUrl, {
+                    rejectUnauthorized: false
+                });
                 
                 this.websocket.on('open', () => {
                     log.info('WebSocket connected');
