@@ -1,4 +1,4 @@
-# DriftCast - Ocean Plastic Drift Forecasting Platform
+# vArI - Ocean Plastic Drift Forecasting Platform
 
 > Distributed computing platform for predicting ocean plastic drift patterns using volunteer computational resources
 
