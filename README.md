@@ -438,12 +438,6 @@ Code review process:
 
 MIT License - see LICENSE file for details
 
-## Contact
-
-**Project maintainers:**
-- GitHub: [oceans-four-driftcast](https://github.com/your-org/oceans-four-driftcast)
-- Email: oceansfour@iit.edu
-
 **Bug reports and feature requests:**
 Use GitHub Issues: https://github.com/your-org/oceans-four-driftcast/issues
 
