@@ -5,11 +5,13 @@ import { GL } from "./gl";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { EducationalSurvey } from "./educational-survey";
 
 export function Hero() {
   const [hovering, setHovering] = useState(false);
   return (
     <>
+      <EducationalSurvey />
       <div className="flex flex-col h-svh justify-between">
         <GL hovering={hovering} />
 
