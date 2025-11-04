@@ -10,8 +10,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Skal Ventures",
-  description: "Investment strategies that outperform the market",
+  title: "vArI",
+  description: "Predict Ocean Plastic Drift",
     generator: 'v0.app'
 };
 
