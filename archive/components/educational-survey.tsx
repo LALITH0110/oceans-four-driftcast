@@ -48,12 +48,6 @@ export function EducationalSurvey() {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    const hasCompletedSurvey = localStorage.getItem("oceanSurveyCompleted");
-    if (hasCompletedSurvey) {
-      setIsDismissed(true);
-      return;
-    }
-
     const handleScroll = () => {
       if (window.scrollY > 800 && !isDismissed) {
         setIsVisible(true);
@@ -82,7 +76,6 @@ export function EducationalSurvey() {
       setShowExplanation(false);
     } else {
       setIsComplete(true);
-      localStorage.setItem("oceanSurveyCompleted", "true");
     }
   };
 

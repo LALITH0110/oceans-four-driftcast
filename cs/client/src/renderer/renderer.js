@@ -1,5 +1,5 @@
 /**
- * Ocean Drift Guardian - Enhanced UI Controller
+ * VARI - Enhanced UI Controller
  */
 const { ipcRenderer } = require('electron');
 
@@ -133,7 +133,7 @@ class OceanDriftGuardian {
             avatarGrid: document.getElementById('avatarGrid')
         };
         
-        this.addActivity('Welcome to Ocean Drift Guardian!', 'info');
+        this.addActivity('Welcome to VARI!', 'info');
     }
     
     setupEventListeners() {

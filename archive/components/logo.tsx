@@ -11,8 +11,8 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => {
         y="30"
         fill="white"
         fontSize="32"
-        fontWeight="bold"
-        fontFamily="Arial, sans-serif"
+        fontWeight="200"
+        fontFamily="Sentient, sans-serif"
       >
         vArI
       </text>
