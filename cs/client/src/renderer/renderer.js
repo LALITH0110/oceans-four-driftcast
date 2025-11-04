@@ -535,9 +535,9 @@ class OceanDriftGuardian {
         if (status.taskStats) {
             const stats = status.taskStats;
             this.state.totalTasks = stats.completed || 0;
-            
+
             this.elements.completedTasks.textContent = stats.completed || 0;
-            this.elements.activeTasks.textContent = stats.active || 0;
+            this.elements.activeTasks.textContent = this.state.isPaused ? 0 : 1;
             this.elements.successRate.textContent = (stats.successRate || 100).toFixed(0) + '%';
             
             // Update quick stats
@@ -646,12 +646,14 @@ class OceanDriftGuardian {
                 this.state.isPaused = false;
                 this.elements.pauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 this.elements.pauseBtn.classList.remove('active');
+                this.elements.activeTasks.textContent = 1;
                 this.addActivity('Processing resumed', 'success');
             } else {
                 await ipcRenderer.invoke('pause-processing');
                 this.state.isPaused = true;
                 this.elements.pauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Resume</span>';
                 this.elements.pauseBtn.classList.add('active');
+                this.elements.activeTasks.textContent = 0;
                 this.addActivity('Processing paused', 'info');
             }
         } catch (error) {
