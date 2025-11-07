@@ -1,0 +1,51 @@
+# General Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+
+# Environment configuration
+.env
+.env.*
+!.env.example
+.python-version
+
+# Jupyter artifacts
+.ipynb_checkpoints/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
+
+# Project outputs
+results/
+data/processed/
+data/crowd/processed/
+docs/onepager.pdf
+site/
+docs/site/
+*.mp4
+results/*.gif
+
+# Keep scaffolding placeholders
+!**/.gitkeep

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python Claude/Claude03/Claude03.py:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
