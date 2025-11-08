@@ -1,0 +1,19 @@
+[
+  {
+    "timestamp": "2025-06-05T12:00:00Z",
+    "lat": 32.5,
+    "lon": -64.7,
+    "observed_item_type": "water bottle",
+    "est_size_mm": 150.0,
+    "notes": "Floating bottle near Bermuda east buoy.",
+    "photo_url": "https://example.com/photos/bottle1.jpg"
+  },
+  {
+    "timestamp": "2025-06-05T12:10:00Z",
+    "lat": 48.2,
+    "lon": -4.2,
+    "observed_item_type": "fishing net fragment",
+    "est_size_mm": 600.0,
+    "notes": "Reported by ferry passenger with GPS log."
+  }
+]

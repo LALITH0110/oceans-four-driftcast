@@ -1,0 +1,39 @@
+1
+00:00:00,000 --> 00:00:06,000
+North Atlantic overview: subtropical currents and sources.
+
+2
+00:00:06,000 --> 00:00:12,000
+Riverine, coastal, and shipping inputs color coded for clarity.
+
+3
+00:00:12,000 --> 00:00:18,000
+Particles swirl clockwise, guided by the Gulf Stream and Azores flow.
+
+4
+00:00:18,000 --> 00:00:24,000
+Ekman and diffusion nudge fragments toward the gyre interior.
+
+5
+00:00:24,000 --> 00:00:30,000
+Accumulation intensifies in the Sargasso Sea monitoring box.
+
+6
+00:00:30,000 --> 00:00:36,000
+Beaching hotspots flare along the Carolinas and Iberian coasts.
+
+7
+00:00:36,000 --> 00:00:42,000
+Seasonal ramp strengthens winter convergence before easing in summer.
+
+8
+00:00:42,000 --> 00:00:48,000
+Validation metrics: gyre fraction rising, curvature proving non-ballistic.
+
+9
+00:00:48,000 --> 00:00:54,000
+Cleanup focus: high-ranked cells and persistent shore impacts.
+
+10
+00:00:54,000 --> 00:01:00,000
+Driftcast 2025: reproducible, judge-ready storytelling of surface plastics.
