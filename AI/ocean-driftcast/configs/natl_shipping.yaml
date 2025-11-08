@@ -1,0 +1,61 @@
+
+# File Summary:
+# - Shipping-centric leakage scenario tuned for gyre accumulation sweeps.
+# - Ideal for parameter studies over diffusivity and windage coefficients.
+# - Default run length is three months for dense visualization.
+
+domain:
+  lon_min: -95.0  # Western boundary (deg E)
+  lon_max: 15.0   # Eastern boundary (deg E)
+  lat_min: 10.0   # Southern boundary (deg N)
+  lat_max: 60.0   # Northern boundary (deg N)
+  resolution_deg: 0.5  # Heatmap grid spacing
+
+time:
+  start: 2025-03-01T00:00:00Z  # Simulation start timestamp
+  end: 2025-06-01T00:00:00Z    # Simulation end timestamp (approx 92 days)
+  dt_minutes: 20.0             # Time step (minutes)
+  output_interval_hours: 6.0   # Snapshot cadence (hours)
+
+physics:
+  diffusivity_m2s: 30.0        # Horizontal diffusivity (m^2/s) microplastic preset
+  windage_coeff: 0.002         # Windage multiplier (microplastic default)
+  stokes_coeff: 0.05           # Stokes drift multiplier (microplastic default)
+  vertical_enabled: false      # Placeholder vertical flag
+  beaching:
+    probability: 0.02          # Beaching probability upon landfall
+    resuspension_days: 500.0   # Average resuspension wait (days)
+    sticky_coastline_buffer_km: 20.0  # Land buffer for beaching (km)
+
+output:
+  directory: results/outputs    # Where NetCDF/Zarr outputs land
+  format: netcdf                # Choose between netcdf/zarr
+  chunks:
+    particle: 256               # Chunk size for dask/xarray persistence
+
+animation:
+  preview_path: results/videos/shipping_preview.mp4  # Preview output path
+  final_path: results/videos/shipping_final.mp4      # Final cut path
+  dpi: 150                                           # Rendering DPI
+  fade_trail_steps: 16                               # Trail length (frames)
+  draw_quivers_every: 8                              # Reserved quiver cadence
+
+sources:
+  - type: shipping
+    name: transatlantic_mainline
+    rate_per_day: 420.0  # Mean leakage particles per day
+    params:
+      routes:
+        - {start_lon: -82.0, start_lat: 28.0, end_lon: -15.0, end_lat: 50.0}
+        - {start_lon: -90.0, start_lat: 30.0, end_lon: -5.0, end_lat: 55.0}
+        - {start_lon: -70.0, start_lat: 45.0, end_lon: 5.0, end_lat: 55.0}
+      width_deg: 1.8            # Cross-track spread (degrees)
+      class_name: fragment      # Emit dominant class (fragments)
+  - type: coastal
+    name: european_coast
+    rate_per_day: 150.0         # Additional coastal leakage
+    params:
+      lon_bounds: [-20.0, 10.0] # Coastline segment longitude range
+      lat_bounds: [35.0, 60.0]  # Coastline segment latitude range
+      buffer_deg: 1.0           # Coast bias jitter
+      class_name: microfiber    # Set class type

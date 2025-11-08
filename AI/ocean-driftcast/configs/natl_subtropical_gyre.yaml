@@ -1,0 +1,126 @@
+
+# File Summary:
+# - Base scenario featuring subtropical gyre circulation and mixed sources.
+# - Extended to a 180 day window to capture convergence into the Sargasso Sea.
+# - Tuned for microplastic-like physics presets used by judges and media exports.
+
+domain:
+  # Western boundary longitude in degrees east.
+  lon_min: -100.0
+  # Eastern boundary longitude in degrees east.
+  lon_max: 20.0
+  # Southern boundary latitude in degrees north.
+  lat_min: 0.0
+  # Northern boundary latitude in degrees north.
+  lat_max: 70.0
+  # Grid spacing for density rasters.
+  resolution_deg: 0.5
+
+gyre_box:
+  lon_min: -70.0
+  lon_max: -30.0
+  lat_min: 20.0
+  lat_max: 40.0
+
+time:
+  # Simulation start timestamp (UTC).
+  start: 2025-01-01T00:00:00Z
+  # Simulation end timestamp (UTC) – 180 day horizon.
+  end: 2025-06-30T00:00:00Z
+  # Fixed integration step length in minutes.
+  dt_minutes: 30.0
+  # Output cadence for snapshots in hours.
+  output_interval_hours: 6.0
+
+physics:
+  # Horizontal diffusivity coefficient (m^2/s) microplastic preset.
+  diffusivity_m2s: 30.0
+  # Windage coefficient scaling 10 m winds (microplastic_default).
+  windage_coeff: 0.002
+  # Stokes drift contribution factor (microplastic_default).
+  stokes_coeff: 0.05
+  # Future vertical motion toggle (False keeps particles at the surface).
+  vertical_enabled: false
+  beaching:
+    # Probability of sticking when a particle intersects the coastline.
+    probability: 0.02
+    # Mean resuspension wait time (days); ~0.002 per day release rate.
+    resuspension_days: 500.0
+    # Buffer distance around coastlines for beaching checks (km).
+    sticky_coastline_buffer_km: 15.0
+  seasonal:
+    enabled: false
+    amplitude: 0.1
+    phase_day: 0.0
+  ekman:
+    enabled: false
+    alpha: 0.03
+    drag_coefficient: 0.0014
+    air_density: 1.225
+    water_density: 1025.0
+
+output:
+  # Directory for NetCDF/Zarr outputs.
+  directory: results/outputs
+  # File format for outputs ("netcdf" or "zarr").
+  format: netcdf
+  # Chunk sizes to use when writing xarray datasets.
+  chunks:
+    particle: 512
+
+animation:
+  # Path for quick preview MP4.
+  preview_path: results/videos/preview.mp4
+  # Path for final-cut MP4.
+  final_path: results/videos/final_cut.mp4
+  # Figure DPI used during rendering.
+  dpi: 150
+  # Number of previous steps used for fading trails.
+  fade_trail_steps: 12
+  # Draw vector quivers every N frames (not yet wired, reserved).
+  draw_quivers_every: 6
+
+sources:
+  # Riverine inputs along major outflows.
+  - type: rivers
+    name: subtropical_rivers
+    # Mean number of particles emitted per day.
+    rate_per_day: 240.0
+    # Optional override of start date (defaults to scenario start).
+    start: 2025-01-01T00:00:00Z
+    # Optional override of end date (defaults to scenario end).
+    end: 2025-01-31T00:00:00Z
+    params:
+      # River mouth locations with weights for sampling.
+      locations:
+        - {name: hudson, lon: -74.0, lat: 40.7, weight: 2.0}
+        - {name: mississippi, lon: -89.4, lat: 30.0, weight: 3.0}
+        - {name: seine, lon: 2.0, lat: 49.0, weight: 1.0}
+      # Gaussian jitter applied to each emission (degrees).
+      jitter_deg: 0.25
+    composition:
+      # Per-class composition fractions sum to 1 and map to particle classes.
+      - {name: microfiber, density_kgm3: 1040.0, diameter_mm: 0.3, settling_velocity_mps: -2e-4, fraction: 0.4}
+      - {name: fragment, density_kgm3: 950.0, diameter_mm: 1.2, settling_velocity_mps: -8e-5, fraction: 0.4}
+      - {name: pellet, density_kgm3: 910.0, diameter_mm: 3.0, settling_velocity_mps: 0.0, fraction: 0.2}
+  # Shipping lane leakage.
+  - type: shipping
+    name: atlantic_mainline
+    rate_per_day: 300.0
+    params:
+      # Route endpoints approximating major trans-Atlantic traffic.
+      routes:
+        - {start_lon: -80.0, start_lat: 26.0, end_lon: -10.0, end_lat: 50.0}
+        - {start_lon: -75.0, start_lat: 40.0, end_lon: -5.0, end_lat: 55.0}
+      # Cross-track spread in degrees.
+      width_deg: 1.2
+  # Background coastal seeding.
+  - type: coastal
+    name: background_coast
+    rate_per_day: 180.0
+    params:
+      # Domain bounds for uniform sampling.
+      lon_bounds: [-95.0, 15.0]
+      lat_bounds: [5.0, 60.0]
+      # Random perturbation to bias particles toward coastline band.
+      buffer_deg: 1.5

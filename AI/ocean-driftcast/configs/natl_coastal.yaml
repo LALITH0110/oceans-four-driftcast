@@ -1,0 +1,68 @@
+
+# File Summary:
+# - Coastal background pollution scenario for outreach animations.
+# - Produces vibrant mixing visuals suited to the final-cut video.
+# - Emphasizes uniform shoreline sources with modest beaching.
+
+domain:
+  lon_min: -100.0  # Domain west bound
+  lon_max: 10.0    # Domain east bound
+  lat_min: 5.0     # Domain south bound
+  lat_max: 65.0    # Domain north bound
+  resolution_deg: 0.4  # Density grid spacing
+
+time:
+  start: 2025-06-01T00:00:00Z  # Simulation start
+  end: 2025-08-30T00:00:00Z    # Simulation end (90 day window)
+  dt_minutes: 20.0             # Integrator time step
+  output_interval_hours: 6.0   # Snapshot cadence
+
+physics:
+  diffusivity_m2s: 30.0        # Horizontal diffusion (microplastic default)
+  windage_coeff: 0.002         # Windage factor (microplastic default)
+  stokes_coeff: 0.05           # Stokes drift factor (microplastic default)
+  vertical_enabled: false      # Surface-only
+  beaching:
+    probability: 0.02          # Beaching probability
+    resuspension_days: 500.0   # Resuspension wait (rare release)
+    sticky_coastline_buffer_km: 12.0  # Coast buffer
+
+output:
+  directory: results/outputs   # Output directory
+  format: netcdf               # Output format
+  chunks:
+    particle: 512              # Chunk size
+
+animation:
+  preview_path: results/videos/coastal_preview.mp4  # Preview output
+  final_path: results/videos/coastal_final.mp4      # Final output
+  dpi: 150                                          # Rendering DPI
+  fade_trail_steps: 20                              # Trail length
+  draw_quivers_every: 10                            # Reserved quiver cadence
+
+sources:
+  - type: coastal
+    name: us_east_coast
+    rate_per_day: 260.0
+    params:
+      lon_bounds: [-90.0, -65.0]
+      lat_bounds: [24.0, 45.0]
+      buffer_deg: 2.0
+      class_name: microfiber
+  - type: coastal
+    name: european_coasts
+    rate_per_day: 220.0
+    params:
+      lon_bounds: [-15.0, 5.0]
+      lat_bounds: [35.0, 60.0]
+      buffer_deg: 1.5
+      class_name: fragment
+  - type: rivers
+    name: supplemental_rivers
+    rate_per_day: 120.0
+    params:
+      locations:
+        - {name: tagus, lon: -9.1, lat: 39.0, weight: 1.5}
+        - {name: thames, lon: 0.0, lat: 51.5, weight: 1.2}
+        - {name: delaware, lon: -75.1, lat: 39.6, weight: 1.3}
+      jitter_deg: 0.2
