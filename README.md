@@ -7,6 +7,12 @@
 [![Node.js](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://www.docker.com/)
 
+---
+
+**🏆 3rd Place** - Grainger Computing Innovation Prize (out of ~150 students)
+
+---
+
 ## Overview
 
 DriftCast is a volunteer distributed computing platform that harnesses idle computational resources to predict ocean plastic drift patterns. The system combines oceanographic data, numerical simulation algorithms, and reinforcement learning to model how plastic waste moves through ocean currents and winds.
