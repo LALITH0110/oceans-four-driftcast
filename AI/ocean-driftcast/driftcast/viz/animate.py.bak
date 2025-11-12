@@ -1,0 +1,269 @@
+"""
+File Summary:
+- Renders driftcast simulation outputs into preview or final-cut animations.
+- Uses Matplotlib animations with FFMPEG writer and imageio fallback.
+- Adds title card, density heatmap, particle trails, and closing credits.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional
+
+import numpy as np
+import xarray as xr
+from driftcast import logger
+from matplotlib import animation
+from matplotlib import pyplot as plt
+
+from driftcast.config import SimulationConfig, load_config
+from driftcast.post.density import particle_density
+from driftcast.sim.runner import run_simulation
+from driftcast.viz.map import make_basemap
+from driftcast.viz.style import apply_style
+
+
+@dataclass
+class AnimationSettings:
+    """Container for animation dial settings."""
+
+    fps: int
+    frame_repeat: int
+    title_seconds: float = 3.0
+    credit_seconds: float = 6.0
+
+
+def _source_palette(sources: Iterable[str]) -> Dict[str, str]:
+    palette = [
+        "#f8d568",
+        "#76b7b2",
+        "#f28e2b",
+        "#4e79a7",
+        "#e15759",
+        "#59a14f",
+    ]
+    colors: Dict[str, str] = {}
+    for idx, src in enumerate(sorted(set(sources))):
+        colors[src] = palette[idx % len(palette)]
+    return colors
+
+
+def _prepare_frames(dataset: xr.Dataset, settings: AnimationSettings) -> List[dict]:
+    frames: List[dict] = []
+    frames.extend([{"kind": "title"}] * int(settings.title_seconds * settings.fps))
+    for idx in range(dataset.sizes.get("time", 0)):
+        frames.extend([{"kind": "data", "index": idx}] * settings.frame_repeat)
+    frames.extend([{"kind": "credits"}] * int(settings.credit_seconds * settings.fps))
+    return frames
+
+
+def _render_frames(
+    config: SimulationConfig,
+    dataset: xr.Dataset,
+    settings: AnimationSettings,
+    output_path: Path,
+    scenario_name: str,
+) -> None:
+    apply_style()
+    fig, ax = make_basemap(config.domain, figsize=(12, 7))
+    heat = ax.imshow(
+        np.zeros((100, 100)),
+        extent=(
+            config.domain.lon_min,
+            config.domain.lon_max,
+            config.domain.lat_min,
+            config.domain.lat_max,
+        ),
+        origin="lower",
+        cmap="viridis",
+        alpha=0.5,
+        zorder=1,
+    )
+    scatter = ax.scatter([], [], s=18, alpha=0.9, zorder=3, edgecolors="none")
+    lower_text = ax.text(
+        0.02,
+        0.05,
+        "",
+        transform=ax.transAxes,
+        color="#f1f0ea",
+        fontsize=13,
+        bbox=dict(facecolor="#0b1d3a", alpha=0.6, pad=6, edgecolor="none"),
+    )
+    title_text = ax.text(
+        0.5,
+        0.82,
+        scenario_name,
+        transform=ax.transAxes,
+        ha="center",
+        va="center",
+        color="#f1f0ea",
+        fontsize=26,
+        weight="bold",
+    )
+    credit_text = ax.text(
+        0.5,
+        0.5,
+        "Illinois Tech Grainger Computing Innovation Prize",
+        transform=ax.transAxes,
+        ha="center",
+        va="center",
+        color="#f1f0ea",
+        fontsize=18,
+        alpha=0.0,
+    )
+
+    frames = _prepare_frames(dataset, settings)
+    trail_steps = max(1, config.animation.fade_trail_steps)
+    source_coord = dataset.coords.get("source_name")
+    palette = _source_palette(
+        source_coord.values if source_coord is not None else ["source"]
+    )
+    trail_artists = [
+        ax.scatter([], [], s=6, alpha=0.0, zorder=2, edgecolors="none")
+        for _ in range(trail_steps)
+    ]
+    domain = config.domain
+
+    def init():
+        heat.set_data(np.zeros_like(heat.get_array()))
+        scatter.set_offsets(np.zeros((0, 2)))
+        lower_text.set_text("")
+        title_text.set_alpha(1.0)
+        credit_text.set_alpha(0.0)
+        for artist in trail_artists:
+            artist.set_offsets(np.zeros((0, 2)))
+            artist.set_alpha(0.0)
+        return [heat, scatter, lower_text, title_text, credit_text, *trail_artists]
+
+    def update(frame_info: dict):
+        kind = frame_info["kind"]
+        if kind == "title":
+            title_text.set_alpha(1.0)
+            credit_text.set_alpha(0.0)
+            scatter.set_offsets(np.zeros((0, 2)))
+            heat.set_data(np.zeros_like(heat.get_array()))
+            lower_text.set_text("")
+            for artist in trail_artists:
+                artist.set_offsets(np.zeros((0, 2)))
+                artist.set_alpha(0.0)
+            return [heat, scatter, lower_text, title_text, credit_text, *trail_artists]
+
+        if kind == "credits":
+            title_text.set_alpha(0.0)
+            credit_text.set_alpha(1.0)
+            lower_text.set_text("Team Oceans Four - Driftcast")
+            scatter.set_offsets(np.zeros((0, 2)))
+            heat.set_data(np.zeros_like(heat.get_array()))
+            for artist in trail_artists:
+                artist.set_offsets(np.zeros((0, 2)))
+                artist.set_alpha(0.0)
+            return [heat, scatter, lower_text, title_text, credit_text, *trail_artists]
+
+        idx = frame_info["index"]
+        title_text.set_alpha(0.0)
+        credit_text.set_alpha(0.0)
+
+        source_values = (
+            dataset.source_name.values
+            if "source_name" in dataset.coords
+            else np.array(["source"] * dataset.sizes.get("particle", 0))
+        )
+        color_array = np.array([palette.get(src, "#ffffff") for src in source_values])
+        lon_now = dataset.lon.isel(time=idx).values
+        lat_now = dataset.lat.isel(time=idx).values
+        mask = np.isfinite(lon_now) & np.isfinite(lat_now)
+        scatter.set_offsets(np.column_stack([lon_now[mask], lat_now[mask]]))
+        scatter.set_color(color_array[mask])
+
+        for artist in trail_artists:
+            artist.set_offsets(np.zeros((0, 2)))
+            artist.set_alpha(0.0)
+        history_indices = list(range(max(0, idx - trail_steps), idx))
+        history_indices.reverse()
+        for level, t_idx in enumerate(history_indices):
+            lon_hist = dataset.lon.isel(time=t_idx).values
+            lat_hist = dataset.lat.isel(time=t_idx).values
+            hist_mask = np.isfinite(lon_hist) & np.isfinite(lat_hist)
+            if not np.any(hist_mask):
+                continue
+            artist = trail_artists[level]
+            artist.set_offsets(np.column_stack([lon_hist[hist_mask], lat_hist[hist_mask]]))
+            artist.set_color(color_array[hist_mask])
+            fade = (len(history_indices) - level) / max(1, len(history_indices))
+            artist.set_alpha(0.25 * fade)
+
+        density = particle_density(
+            lon_now[mask], lat_now[mask], domain, smooth_sigma=1.0
+        )
+        heat.set_data(density.values)
+        heat.set_extent(
+            (
+                density.coords["lon"].values[0],
+                density.coords["lon"].values[-1],
+                density.coords["lat"].values[0],
+                density.coords["lat"].values[-1],
+            )
+        )
+
+        time_label = np.datetime_as_string(dataset.time.values[idx], unit="h")
+        lower_text.set_text(
+            f"{scenario_name} | {time_label}\n"
+            f"Particles: {mask.sum():d} | Kh={config.physics.diffusivity_m2s:.1f} m^2/s | windage={config.physics.windage_coeff:.3f}"
+        )
+        return [heat, scatter, lower_text, title_text, credit_text, *trail_artists]
+
+    anim = animation.FuncAnimation(
+        fig,
+        update,
+        frames=frames,
+        init_func=init,
+        blit=True,
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        writer = animation.FFMpegWriter(fps=settings.fps, bitrate=4000)
+        anim.save(output_path, writer=writer, dpi=config.animation.dpi)
+        logger.info("Saved animation to %s via FFMPEG", output_path)
+    except (RuntimeError, FileNotFoundError) as exc:
+        logger.warning("FFMPEG unavailable (%s); using imageio fallback.", exc)
+        import imageio
+
+        with imageio.get_writer(output_path, fps=settings.fps, codec="libx264") as writer_alt:
+            for frame_info in frames:
+                update(frame_info)
+                fig.canvas.draw()
+                image = np.asarray(fig.canvas.buffer_rgba())
+                writer_alt.append_data(image)
+        logger.info("Saved animation to %s via imageio", output_path)
+    finally:
+        plt.close(fig)
+
+
+def make_preview(
+    config_path: Path | str,
+    out: Path | str = "results/videos/preview.mp4",
+    seed: Optional[int] = None,
+) -> Path:
+    """Generate the quick-preview animation."""
+    cfg = load_config(config_path)
+    dataset = run_simulation(cfg, seed=seed)
+    out_path = Path(out)
+    settings = AnimationSettings(fps=24, frame_repeat=3)
+    _render_frames(cfg, dataset, settings, out_path, scenario_name=Path(config_path).stem)
+    return out_path
+
+
+def make_final_cut(
+    config_path: Path | str,
+    out: Path | str = "results/videos/final_cut.mp4",
+    seed: Optional[int] = None,
+) -> Path:
+    """Generate the 2-3 minute final-cut animation."""
+    cfg = load_config(config_path)
+    dataset = run_simulation(cfg, seed=seed)
+    out_path = Path(out)
+    settings = AnimationSettings(fps=24, frame_repeat=12)
+    _render_frames(cfg, dataset, settings, out_path, scenario_name=Path(config_path).stem)
+    return out_path
