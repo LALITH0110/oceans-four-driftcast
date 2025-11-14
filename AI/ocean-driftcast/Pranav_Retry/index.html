@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftCast NA - Synthetic Ocean Plastic Drift</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- CDN Dependencies -->
+    <script src="https://d3js.org/d3-geo.v4.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>DriftCast NA <span class="subtitle">North Atlantic Plastic Drift (Synthetic)</span></h1>
+            <div class="disclaimer">⚠️ Synthetic demo - not real forecasts</div>
+        </header>
+
+        <!-- Main Container -->
+        <div id="main-container">
+            <!-- Left Panel - Release Sites -->
+            <div id="left-panel" class="panel">
+                <h3>Release Sites</h3>
+                <div id="release-filter">
+                    <label><input type="checkbox" id="show-us" checked> US Sites</label>
+                    <label><input type="checkbox" id="show-eu" checked> EU Sites</label>
+                </div>
+                <div id="release-list"></div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div id="canvas-container">
+                <canvas id="base-canvas"></canvas>
+                <canvas id="anim-canvas"></canvas>
+                <div id="cursor-info" class="info-card"></div>
+                <div id="legend" class="legend"></div>
+            </div>
+
+            <!-- Right Panel - Controls -->
+            <div id="right-panel" class="panel">
+                <h3>Controls</h3>
+
+                <!-- Mode Selection -->
+                <div class="control-group">
+                    <label>Mode:</label>
+                    <select id="mode-select">
+                        <option value="currents">Currents</option>
+                        <option value="pins">Release Pins</option>
+                        <option value="tracker">Tracker</option>
+                        <option value="heatmap">Heatmap</option>
+                    </select>
+                </div>
+
+                <!-- Playback Controls -->
+                <div class="control-group">
+                    <button id="btn-start">Start</button>
+                    <button id="btn-pause">Pause</button>
+                    <button id="btn-reset">Reset</button>
+                </div>
+
+                <!-- Quick Release -->
+                <div class="control-group">
+                    <button id="btn-drop-us">Drop US</button>
+                    <button id="btn-drop-eu">Drop EU</button>
+                </div>
+
+                <!-- Toggles -->
+                <div class="control-group">
+                    <label><input type="checkbox" id="toggle-trails"> Trails</label>
+                    <label><input type="checkbox" id="toggle-heatmap"> Heatmap</label>
+                    <label><input type="checkbox" id="toggle-beaching" checked> Beaching</label>
+                </div>
+
+                <!-- Sliders -->
+                <div class="control-group">
+                    <label>Particles: <span id="particles-val">8000</span></label>
+                    <input type="range" id="slider-particles" min="1000" max="50000" step="1000" value="8000">
+                </div>
+
+                <div class="control-group">
+                    <label>Speed: <span id="speed-val">1.0</span>x</label>
+                    <input type="range" id="slider-speed" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Windage: <span id="windage-val">1.0</span>x</label>
+                    <input type="range" id="slider-windage" min="0.0" max="2.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Season:</label>
+                    <select id="season-select">
+                        <option value="DJF">DJF (Winter)</option>
+                        <option value="MAM">MAM (Spring)</option>
+                        <option value="JJA" selected>JJA (Summer)</option>
+                        <option value="SON">SON (Fall)</option>
+                    </select>
+                </div>
+
+                <!-- Stats -->
+                <div class="control-group stats">
+                    <div>FPS: <span id="fps">0</span></div>
+                    <div>Beached: <span id="beached-count">0</span></div>
+                    <div>Active: <span id="active-count">0</span></div>
+                </div>
+
+                <!-- Export -->
+                <div class="control-group">
+                    <button id="btn-export">Export WebM</button>
+                    <button id="btn-stop-export" style="display:none;">Stop Export</button>
+                    <div id="export-progress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="physics.js"></script>
+    <script type="module" src="draw.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# File Summary:
+# - Conda environment specification for replicable driftcast development setups.
+# - Mirrors pyproject dependencies while pinning to compatible minor releases.
+# - Includes optional extras for testing, linting, and visualization.
+
+name: driftcast
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy>=1.25,<2.0
+  - scipy>=1.11,<2.0
+  - pandas>=2.0,<3.0
+  - xarray>=2023.8
+  - dask>=2023.8
+  - distributed>=2023.8
+  - pyyaml>=6.0,<7.0
+  - pydantic>=2.6,<3.0
+  - typer>=0.9,<1.0
+  - loguru>=0.7,<1.0
+  - jsonschema>=4.18,<5.0
+  - pyarrow>=11.0,<15.0
+  - cartopy>=0.22,<0.23
+  - matplotlib>=3.8,<4.0
+  - shapely>=2.0,<3.0
+  - pyproj>=3.5,<4.0
+  - netcdf4>=1.6,<2.0
+  - zarr>=2.16,<3.0
+  - imageio>=2.31,<3.0
+  - tqdm>=4.65,<5.0
+  - numba>=0.57,<1.0
+  - pip
+  - pip:
+      - ffmpeg-python>=0.2,<0.3
+      - moviepy>=1.0,<2.0
+      - markdown>=3.4,<4.0
