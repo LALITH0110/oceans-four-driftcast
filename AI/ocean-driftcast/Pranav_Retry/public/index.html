@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DriftCast – North Atlantic (Synthetic)</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="base-canvas" aria-hidden="true"></canvas>
+    <canvas id="anim-canvas" aria-label="Synthetic drift visualization"></canvas>
+
+    <div id="control-panel" class="panel">
+      <header class="panel__header">
+        <h1>DriftCast</h1>
+        <div class="panel__subtitle">North Atlantic · Synthetic</div>
+      </header>
+      <nav class="panel__tabs" role="tablist" aria-label="Modes">
+        <button class="tab-button" data-mode="currents" role="tab">Currents</button>
+        <button class="tab-button" data-mode="releases" role="tab">Releases</button>
+        <button class="tab-button" data-mode="tracker" role="tab">Tracker</button>
+        <button class="tab-button" data-mode="density" role="tab">Density</button>
+      </nav>
+
+      <section class="panel__section panel__section--compact">
+        <div class="control-row">
+          <label for="particles-range">Particles</label>
+          <input id="particles-range" type="range" min="1000" max="50000" step="1000" value="8000">
+          <span class="control-value" data-bind="particles">8k</span>
+        </div>
+        <div class="control-row">
+          <label for="speed-range">Speed</label>
+          <input id="speed-range" type="range" min="0.2" max="2.0" step="0.05" value="1.0">
+          <span class="control-value" data-bind="speed">1.0×</span>
+        </div>
+        <div class="control-row">
+          <label for="windage-range">Windage</label>
+          <input id="windage-range" type="range" min="0" max="0.06" step="0.005" value="0.02">
+          <span class="control-value" data-bind="windage">0.020</span>
+        </div>
+        <div class="control-row">
+          <label for="season-select">Season</label>
+          <select id="season-select">
+            <option value="DJF">DJF</option>
+            <option value="MAM">MAM</option>
+            <option value="JJA">JJA</option>
+            <option value="SON">SON</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panel__section toggles">
+        <label><input type="checkbox" id="toggle-trails" checked> Trails</label>
+        <label><input type="checkbox" id="toggle-heatmap"> Heatmap</label>
+        <label><input type="checkbox" id="toggle-beaching" checked> Beaching</label>
+      </section>
+
+      <section class="panel__section actions">
+        <button data-action="start">Start</button>
+        <button data-action="pause">Pause</button>
+        <button data-action="reset">Reset</button>
+        <button data-action="seed-us" class="accent">Drop US</button>
+        <button data-action="seed-eu" class="accent">Drop EU</button>
+      </section>
+
+      <section class="panel__section export">
+        <button data-action="export" class="wide">Export 5–10 min WebM</button>
+        <div class="export-progress" hidden>
+          <progress value="0" max="1"></progress>
+          <button data-action="export-stop">Stop</button>
+        </div>
+        <div class="export-link" hidden>
+          <a href="#" download>Download recording</a>
+        </div>
+      </section>
+
+      <section class="panel__section metrics">
+        <div>FPS <span data-bind="fps">0</span></div>
+        <div>Active <span data-bind="active">0</span></div>
+        <div>Beached US <span data-bind="beached-us">0</span></div>
+        <div>Beached EU <span data-bind="beached-eu">0</span></div>
+      </section>
+
+      <section class="panel__section mode-content" data-mode="currents" role="tabpanel">
+        <p>Animated streaks expose the synthetic vector field. Hover for direction, speed, and scalar overlay values.</p>
+        <div class="legend legend--scalar">
+          <canvas width="180" height="12" aria-hidden="true"></canvas>
+          <div class="legend__labels">
+            <span>Calm</span><span>Moderate</span><span>Severe</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel__section mode-content" data-mode="releases" role="tabpanel" hidden>
+        <p>Filter coastal release pins and queue particle injections from selected sites.</p>
+        <div class="filter-group">
+          <label>Distance to water <input type="range" data-filter="water" min="0" max="1" step="0.05" value="1"></label>
+          <label>Population <input type="range" data-filter="population" min="0" max="1" step="0.05" value="1"></label>
+          <label>Site size <input type="range" data-filter="size" min="0" max="1" step="0.05" value="1"></label>
+        </div>
+        <ul class="pin-list" aria-live="polite"></ul>
+      </section>
+
+      <section class="panel__section mode-content" data-mode="tracker" role="tabpanel" hidden>
+        <p>Click any coastal location to simulate a neon trajectory up to 20 synthetic years. Distance and open-ocean probability update live.</p>
+        <div class="tracker-stats">
+          <div>Distance <span data-bind="tracker-distance">0 km</span></div>
+          <div>Open-ocean prob <span data-bind="tracker-prob">0%</span></div>
+        </div>
+      </section>
+
+      <section class="panel__section mode-content" data-mode="density" role="tabpanel" hidden>
+        <p>Accumulate a watercolor-style density heatmap from seeded particles. Caption updates with integration age.</p>
+        <div class="density-caption" data-bind="density-caption">Synthetic plastics after 0 years.</div>
+      </section>
+    </div>
+
+    <div id="hover-card" class="hover-card" role="presentation">
+      <div><strong>Lat</strong> <span data-bind="lat">0</span></div>
+      <div><strong>Lon</strong> <span data-bind="lon">0</span></div>
+      <div><strong>Dir</strong> <span data-bind="dir">0°</span></div>
+      <div><strong>Speed</strong> <span data-bind="speed">0 m/s</span></div>
+      <div><strong>Scalar</strong> <span data-bind="scalar">0</span></div>
+    </div>
+  </div>
+
+  <template id="pin-card-template">
+    <article class="pin-card">
+      <header>
+        <h2></h2>
+        <div class="pin-card__meta"></div>
+      </header>
+      <div class="pin-card__stats"></div>
+      <button data-pin-action="seed">Seed 1000 particles</button>
+    </article>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chroma-js@2.5.0/chroma.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
